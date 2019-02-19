@@ -65,6 +65,16 @@ static struct Color
 	static const COLORREF BLACK = RGB(0, 0, 0);
 	static const COLORREF WHITE = RGB(255, 255, 255);
 };
+static struct PenStyle
+{
+	static const INT SOLID = PS_SOLID;
+	static const INT EMPTY = PS_NULL;
+	static const INT DASH = PS_DASH;
+	static const INT DOT = PS_DOT;
+	static const INT DASHDOT = PS_DASHDOT;
+	static const INT DASHDOTDOT = PS_DASHDOTDOT;
+	static const INT INSIDEFRAME = PS_INSIDEFRAME;
+};
 
 /*
 struct Line
@@ -133,6 +143,8 @@ public:
 			this
 		);
 
+		if (!f_hMainWnd) throw "Window is not created.";
+
 		RECT clientRect;
 		GetClientRect(f_hMainWnd, &clientRect);
 
@@ -145,19 +157,21 @@ public:
 		f_hBufferDC = CreateCompatibleDC(f_hMainWndDC);
 		f_hBufferBitmap = CreateCompatibleBitmap(f_hMainWndDC, GetClientWidth(), GetClientHeight());
 		f_hCurrentBrush = CreateSolidBrush(Color::BLACK);
-		f_hCurrentPen = CreatePen(PS_NULL, NULL, Color::BLACK);
+		f_hCurrentPen = CreatePen(PenStyle::SOLID, 1, Color::BLACK);
+		f_cCurrentBrushColor = Color::BLACK;
+		f_cCurrentPenColor = Color::BLACK;
+		f_iCurrentPenWidth = 1;
+		f_iCurrentPenStyle = PenStyle::SOLID;
 		SelectObject(f_hBufferDC, f_hBufferBitmap);
 		SelectObject(f_hBufferDC, f_hCurrentBrush);
 		SelectObject(f_hBufferDC, f_hCurrentPen);
 		SetStretchBltMode(f_hMainWndDC, COLORONCOLOR);
 
-		OnCreate();
-
-		if (!f_hMainWnd) throw "Window is not created.";
-
 		ShowWindow(f_hMainWnd, SW_SHOW);
 		UpdateWindow(f_hMainWnd);
 		SetTimer(f_hMainWnd, NULL, 10, NULL);
+
+		OnCreate();
 
 		MSG msg;
 
@@ -196,16 +210,11 @@ public:
 	}
 
 protected:
-	virtual VOID OnCreate() = 0;
-	virtual VOID OnUpdate(float fdeltaTime) = 0;
+	virtual VOID OnCreate() {};
+	virtual VOID OnUpdate(float fdeltaTime) {};
 	virtual VOID OnDestroy() {}
 
 	/*
-	VOID DrawPixel(const int& x, const int& y, const COLORREF& color)
-	{
-		SetPixel(f_hBufferDC, x, y, color);
-	}
-
 	VOID DrawLine(const int& x1, const int& y1, const int& x2, const int& y2, const COLORREF& color)
 	{
 		if (x1 == x2)
@@ -271,9 +280,16 @@ protected:
 	}
 	*/
 
-	VOID DrawLine(const int& x1, const int& y1, const int& x2, const int& y2, const COLORREF& color)
+	VOID DrawPixel(const int& x, const int& y, const COLORREF& color)
+	{
+		SetPixel(f_hBufferDC, x, y, color);
+	}
+
+	VOID DrawLine(const int& x1, const int& y1, const int& x2, const int& y2, const COLORREF& color, const INT& width = 1)
 	{
 		SetCurrentPenColor(color);
+		SetCurrentPenWidth(width);
+		SetCurrentPenStyle(PenStyle::SOLID);
 
 		MoveToEx(f_hBufferDC, x1, y1, NULL);
 		LineTo(f_hBufferDC, x2, y2);
@@ -281,21 +297,16 @@ protected:
 
 	VOID DrawTriangle(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const COLORREF& color)
 	{
-		SetCurrentPenColor(color);
-
-		POINT p[3];
-		p[0].x = x1;
-		p[0].y = y1;
-		p[1].x = x2;
-		p[1].y = y2;
-		p[2].x = x3;
-		p[2].y = y3;
-		Polygon(f_hBufferDC, p, 3);
+		DrawLine(x1, y1, x2, y2, color);
+		DrawLine(x2, y2, x3, y3, color);
+		DrawLine(x3, y3, x1, y1, color);
 	}
 
 	VOID FillTriangle(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const COLORREF& color)
 	{
 		SetCurrentBrushColor(color);
+		SetCurrentPenStyle(PenStyle::SOLID);
+		SetCurrentPenColor(color);
 
 		POINT p[3];
 		p[0].x = x1;
@@ -310,13 +321,10 @@ protected:
 	VOID FillWindow(const COLORREF& color)
 	{
 		SetCurrentBrushColor(color);
-		Rectangle(f_hBufferDC, 0, 0, GetClientWidth(), GetClientHeight());
-	}
+		SetCurrentPenStyle(PenStyle::SOLID);
+		SetCurrentPenColor(color);
 
-	VOID RefreshColors()
-	{
-		SetCurrentBrushColor(Color::BLACK);
-		SetCurrentPenColor(Color::BLACK);
+		Rectangle(f_hBufferDC, 0, 0, GetClientWidth(), GetClientHeight());
 	}
 
 private:
@@ -344,6 +352,7 @@ private:
 		{
 		case WM_TIMER:
 		{
+			//Calculating time between updates
 			f_timePoint2 = std::chrono::system_clock::now();
 			std::chrono::duration<float> deltaTime = f_timePoint2 - f_timePoint1;
 			f_timePoint1 = f_timePoint2;
@@ -373,10 +382,10 @@ private:
 				f_keysOldState[i] = f_keysNewState[i];
 			}
 
-			RefreshColors();
-
+			//Update
 			OnUpdate(deltaTime.count());
 
+			//Fps show
 			if (f_bShowFps)
 			{
 				TCHAR buf[8];
@@ -386,6 +395,7 @@ private:
 				DrawText(f_hBufferDC, buf, 8, &textRect, DT_LEFT);
 			}
 
+			//Copying from buffer to screen
 			StretchBlt
 			(
 				f_hMainWndDC,
@@ -400,6 +410,7 @@ private:
 				GetClientHeight(),
 				SRCCOPY
 			);
+
 			break;
 		}
 
@@ -453,26 +464,53 @@ private:
 		if (f_cCurrentPenColor != color) 
 		{
 			if (f_hCurrentPen) DeleteObject(f_hCurrentPen);
-			f_hCurrentPen = CreatePen(PS_SOLID, 1, color);
+			f_hCurrentPen = CreatePen(PS_SOLID, f_iCurrentPenWidth, color);
 			f_cCurrentPenColor = color;
+			SelectObject(f_hBufferDC, f_hCurrentPen);
+		}
+	}
+
+	VOID SetCurrentPenWidth(const INT& width)
+	{
+		if (f_iCurrentPenWidth != width)
+		{
+			if (f_hCurrentPen) DeleteObject(f_hCurrentPen);
+			f_hCurrentPen = CreatePen(PS_SOLID, width, f_cCurrentPenColor);
+			f_iCurrentPenWidth = width;
+			SelectObject(f_hBufferDC, f_hCurrentPen);
+		}
+	}
+
+	VOID SetCurrentPenStyle(const INT& style)
+	{
+		if (f_iCurrentPenStyle != style)
+		{
+			if (f_hCurrentPen) DeleteObject(f_hCurrentPen);
+			f_hCurrentPen = CreatePen(style, f_iCurrentPenWidth, f_cCurrentPenColor);
+			f_iCurrentPenStyle = style;
 			SelectObject(f_hBufferDC, f_hCurrentPen);
 		}
 	}
 
 private:
 	HINSTANCE f_hInstance;
+	HWND f_hMainWnd;
 	HDC f_hMainWndDC;
 	HDC f_hBufferDC;
 	HBITMAP f_hBufferBitmap;
+
 	HBRUSH f_hCurrentBrush;
 	HPEN f_hCurrentPen;
 	COLORREF f_cCurrentBrushColor;
 	COLORREF f_cCurrentPenColor;
-	HWND f_hMainWnd;
+	INT f_iCurrentPenWidth;
+	INT f_iCurrentPenStyle;
+
 	UINT f_uiClientWidth;
 	UINT f_uiClientHeight;
 	std::chrono::system_clock::time_point f_timePoint1;
 	std::chrono::system_clock::time_point f_timePoint2;
+
 	KeyInfo f_keys[256];
 	SHORT f_keysNewState[256];
 	SHORT f_keysOldState[256];

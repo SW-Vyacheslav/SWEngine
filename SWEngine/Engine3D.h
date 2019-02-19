@@ -368,7 +368,7 @@ public:
 				tr.vertices[1].y,
 				tr.vertices[2].x,
 				tr.vertices[2].y,
-				Color::BLUE
+				Color::BLACK
 			);
 		}
 	}
