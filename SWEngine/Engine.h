@@ -1,4 +1,9 @@
 #pragma once
+
+#ifndef UNICODE
+#error UNICODE is not enabled for your compiler!
+#endif
+
 #include <Windows.h>
 #include <chrono>
 #include <iostream>
@@ -6,6 +11,14 @@
 #include <fstream>
 #include <strstream>
 #include <algorithm>
+#include <thread>
+#include <mutex>
+#include <atomic>
+#include <condition_variable>
+#include <gdiplus.h>
+#include <objidl.h>
+
+#pragma comment (lib,"Gdiplus.lib")
 
 static struct KeyCode
 {
@@ -53,9 +66,9 @@ static struct KeyCode
 };
 struct KeyInfo
 {
-	bool KeyDown = false;
-	bool KeyUp = false;
-	bool KeyPressed = false;
+	bool KeyDown;
+	bool KeyUp;
+	bool KeyPressed;
 };
 static struct Color
 {
@@ -104,6 +117,7 @@ public:
 	explicit Engine()
 	{
 		f_bShowFps = false;
+		f_bAtomActive = false;
 	}
 
 	VOID Start(UINT windowWidth, UINT windowHeight)
@@ -111,6 +125,10 @@ public:
 		f_hInstance = GetModuleHandle(0);
 
 		if (!f_hInstance) throw "Can't get an instance.";
+
+		Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+		ULONG_PTR gdiplusToken;
+		GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 
 		WNDCLASSEX wce;
 		wce.cbClsExtra = NULL;
@@ -153,6 +171,7 @@ public:
 
 		f_timePoint1 = std::chrono::system_clock::now();
 		f_timePoint2 = std::chrono::system_clock::now();
+
 		f_hMainWndDC = GetDC(f_hMainWnd);
 		f_hBufferDC = CreateCompatibleDC(f_hMainWndDC);
 		f_hBufferBitmap = CreateCompatibleBitmap(f_hMainWndDC, GetClientWidth(), GetClientHeight());
@@ -166,30 +185,46 @@ public:
 		SelectObject(f_hBufferDC, f_hCurrentBrush);
 		SelectObject(f_hBufferDC, f_hCurrentPen);
 		SetStretchBltMode(f_hMainWndDC, COLORONCOLOR);
+		SetStretchBltMode(f_hBufferDC, COLORONCOLOR);
 
 		ShowWindow(f_hMainWnd, SW_SHOW);
+		ShowWindow(GetConsoleWindow(), SW_HIDE);
 		UpdateWindow(f_hMainWnd);
-		SetTimer(f_hMainWnd, NULL, 10, NULL);
 
-		OnCreate();
+		f_bAtomActive = true;
 
 		MSG msg;
+		std::thread engine_thread(&Engine::EngineLoop, this);
 
 		while (GetMessage(&msg, NULL, NULL, NULL))
 		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
+
+		engine_thread.join();
+
+		Gdiplus::GdiplusShutdown(gdiplusToken);
 	}
 
-	UINT GetClientWidth()
+	UINT GetClientWidth() const
 	{
 		return f_uiClientWidth;
 	}
 
-	UINT GetClientHeight()
+	UINT GetClientHeight() const
 	{
 		return f_uiClientHeight;
+	}
+
+	INT GetMouseX() const
+	{
+		return f_iMousePosX;
+	}
+
+	INT GetMouseY() const
+	{
+		return f_iMousePosY;
 	}
 
 	VOID ShowFps(bool isShowed)
@@ -197,12 +232,12 @@ public:
 		f_bShowFps = isShowed;
 	}
 
-	bool IsFpsShowed()
+	bool IsFpsShowed() const
 	{
 		return f_bShowFps;
 	}
 
-	const KeyInfo* GetKeyInfo(const INT& keycode)
+	const KeyInfo* GetKeyInfo(const INT& keycode) const
 	{
 		if (keycode < 0 || keycode > 255) return NULL;
 
@@ -267,8 +302,9 @@ protected:
 			scanline.y1 = scanline.y2 = y + 1;
 		}
 	}
+	*/
 
-	VOID DrawCircle(const int& cx,const int& cy,const int& radius, const COLORREF& color)
+	VOID DrawCircle(const int& cx, const int& cy, const int& radius, const COLORREF& color)
 	{
 		for (int x = cx - radius; x <= cx + radius; x++)
 		{
@@ -278,28 +314,47 @@ protected:
 			DrawPixel(x, y2, color);
 		}
 	}
-	*/
 
 	VOID DrawPixel(const int& x, const int& y, const COLORREF& color)
 	{
 		SetPixel(f_hBufferDC, x, y, color);
 	}
 
-	VOID DrawLine(const int& x1, const int& y1, const int& x2, const int& y2, const COLORREF& color, const INT& width = 1)
+	VOID DrawLine(const int& x1, const int& y1, const int& x2, const int& y2, const COLORREF& color, const UINT& width = 1, const INT& pen_style = PenStyle::SOLID)
 	{
 		SetCurrentPenColor(color);
 		SetCurrentPenWidth(width);
-		SetCurrentPenStyle(PenStyle::SOLID);
+		SetCurrentPenStyle(pen_style);
 
 		MoveToEx(f_hBufferDC, x1, y1, NULL);
 		LineTo(f_hBufferDC, x2, y2);
 	}
 
-	VOID DrawTriangle(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const COLORREF& color)
+	VOID DrawTriangle(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const COLORREF& color, const UINT& border_width = 1, const INT& pen_style = PenStyle::SOLID)
 	{
-		DrawLine(x1, y1, x2, y2, color);
-		DrawLine(x2, y2, x3, y3, color);
-		DrawLine(x3, y3, x1, y1, color);
+		DrawLine(x1, y1, x2, y2, color, border_width, pen_style);
+		DrawLine(x2, y2, x3, y3, color, border_width, pen_style);
+		DrawLine(x3, y3, x1, y1, color, border_width, pen_style);
+	}
+
+	VOID DrawImage(const HBITMAP& bitmap, const int& x1, const int& y1, const UINT& width = 0, const UINT& height = 0)
+	{
+		HDC hDC = CreateCompatibleDC(f_hMainWndDC);
+		SelectObject(hDC, bitmap);
+		BITMAP bm;
+		GetObject(bitmap, sizeof(bm), &bm);
+		if (width != 0 && height != 0) StretchBlt(f_hBufferDC, x1, y1, width, height, hDC, 0, 0, bm.bmWidth, bm.bmHeight, SRCCOPY);
+		else StretchBlt(f_hBufferDC, x1, y1, bm.bmWidth, bm.bmHeight, hDC, 0, 0, bm.bmWidth, bm.bmHeight, SRCCOPY);
+		DeleteDC(hDC);
+	}
+
+	HBITMAP LoadHBitmap(const LPCWSTR filename)
+	{
+		HBITMAP hbm;
+		Gdiplus::Bitmap bm(filename);
+		bm.GetHBITMAP(Gdiplus::Color(0, 0, 0), &hbm);
+
+		return hbm;
 	}
 
 	VOID FillTriangle(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const COLORREF& color)
@@ -307,6 +362,7 @@ protected:
 		SetCurrentBrushColor(color);
 		SetCurrentPenStyle(PenStyle::SOLID);
 		SetCurrentPenColor(color);
+		SetCurrentPenWidth(1);
 
 		POINT p[3];
 		p[0].x = x1;
@@ -325,6 +381,11 @@ protected:
 		SetCurrentPenColor(color);
 
 		Rectangle(f_hBufferDC, 0, 0, GetClientWidth(), GetClientHeight());
+	}
+
+	VOID FillWindow(const HBITMAP& bitmap)
+	{
+		DrawImage(bitmap, 0, 0, GetClientWidth(), GetClientHeight());
 	}
 
 private:
@@ -350,7 +411,64 @@ private:
 	{
 		switch (msg)
 		{
-		case WM_TIMER:
+		case WM_SIZE:
+		{
+			RECT clientRect;
+			GetClientRect(f_hMainWnd, &clientRect);
+
+			f_uiClientWidth = clientRect.right;
+			f_uiClientHeight = clientRect.bottom;
+
+			f_mutexBuffer.lock();
+			DeleteObject(f_hBufferBitmap);
+			f_hBufferBitmap = CreateCompatibleBitmap(f_hMainWndDC, GetClientWidth(), GetClientHeight());
+			SelectObject(f_hBufferDC, f_hBufferBitmap);
+			f_mutexBuffer.unlock();
+
+			break;
+		}
+
+		case WM_MOUSEMOVE:
+		{
+			f_iMousePosX = LOWORD(lParam);
+			f_iMousePosY = HIWORD(lParam);
+
+			break;
+		}
+
+		case WM_SYSCOMMAND:
+		{
+			if (wParam == SC_CLOSE)
+			{
+				f_bAtomActive = false;
+
+				std::unique_lock<std::mutex> ul(f_mutexEngineLoop);
+				f_cvEngineLoopFinished.wait(ul);
+
+				DeleteObject(f_hBufferBitmap);
+				DeleteObject(f_hBufferDC);
+				DeleteObject(f_hCurrentBrush);
+				DeleteObject(f_hCurrentPen);
+				ReleaseDC(f_hMainWnd, f_hMainWndDC);
+				PostQuitMessage(0);
+			}
+			else DefWindowProc(hWnd, msg, wParam, lParam);
+
+			break;
+		}
+
+		default:
+			return DefWindowProc(hWnd, msg, wParam, lParam);
+		}
+
+		return 0;
+	}
+
+	VOID EngineLoop()
+	{
+		OnCreate();
+
+		while (f_bAtomActive)
 		{
 			//Calculating time between updates
 			f_timePoint2 = std::chrono::system_clock::now();
@@ -388,13 +506,19 @@ private:
 			//Fps show
 			if (f_bShowFps)
 			{
-				TCHAR buf[8];
-				ZeroMemory(buf, 8);
-				swprintf_s(buf, 8, L"FPS:%3.0f", 1.0f / deltaTime.count());
-				RECT textRect = { 5,5,65,25 };
-				DrawText(f_hBufferDC, buf, 8, &textRect, DT_LEFT);
+				TCHAR fpsbuf[256];
+				TCHAR mouseposbuf[256];
+				ZeroMemory(fpsbuf, 256);
+				ZeroMemory(mouseposbuf, 256);
+				swprintf_s(fpsbuf, 256, L"FPS:%3.0f", 1.0f / deltaTime.count());
+				swprintf_s(mouseposbuf, 256, L"MOUSE:X=%d Y=%d", GetMouseX(), GetMouseY());
+				RECT textRect = { 0,0,lstrlen(fpsbuf) * 10,25 };
+				RECT textRect2 = { 0,20,lstrlen(mouseposbuf) * 10,45 };
+				DrawText(f_hBufferDC, fpsbuf, lstrlen(fpsbuf), &textRect, NULL);
+				DrawText(f_hBufferDC, mouseposbuf, lstrlen(mouseposbuf), &textRect2, DT_BOTTOM);
 			}
 
+			f_mutexBuffer.lock();
 			//Copying from buffer to screen
 			StretchBlt
 			(
@@ -410,42 +534,14 @@ private:
 				GetClientHeight(),
 				SRCCOPY
 			);
+			f_mutexBuffer.unlock();
 
-			break;
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		}
 
-		case WM_SIZE:
-		{
-			RECT clientRect;
-			GetClientRect(f_hMainWnd, &clientRect);
+		OnDestroy();
 
-			f_uiClientWidth = clientRect.right;
-			f_uiClientHeight = clientRect.bottom;
-
-			DeleteObject(f_hBufferBitmap);
-			f_hBufferBitmap = CreateCompatibleBitmap(f_hMainWndDC, GetClientWidth(), GetClientHeight());
-			SelectObject(f_hBufferDC, f_hBufferBitmap);
-
-			break;
-		}
-
-		case WM_DESTROY:
-		{
-			DeleteObject(f_hBufferBitmap);
-			DeleteObject(f_hBufferDC);
-			DeleteObject(f_hCurrentBrush);
-			DeleteObject(f_hCurrentPen);
-			ReleaseDC(f_hMainWnd, f_hMainWndDC);
-			OnDestroy();
-			PostQuitMessage(0);
-			break;
-		}
-
-		default:
-			return DefWindowProc(hWnd, msg, wParam, lParam);
-		}
-
-		return 0;
+		f_cvEngineLoopFinished.notify_one();
 	}
 
 	VOID SetCurrentBrushColor(const COLORREF& color)
@@ -461,7 +557,7 @@ private:
 
 	VOID SetCurrentPenColor(const COLORREF& color)
 	{
-		if (f_cCurrentPenColor != color) 
+		if (f_cCurrentPenColor != color)
 		{
 			if (f_hCurrentPen) DeleteObject(f_hCurrentPen);
 			f_hCurrentPen = CreatePen(PS_SOLID, f_iCurrentPenWidth, color);
@@ -500,8 +596,9 @@ private:
 	HBITMAP f_hBufferBitmap;
 
 	HBRUSH f_hCurrentBrush;
-	HPEN f_hCurrentPen;
 	COLORREF f_cCurrentBrushColor;
+
+	HPEN f_hCurrentPen;
 	COLORREF f_cCurrentPenColor;
 	INT f_iCurrentPenWidth;
 	INT f_iCurrentPenStyle;
@@ -514,6 +611,14 @@ private:
 	KeyInfo f_keys[256];
 	SHORT f_keysNewState[256];
 	SHORT f_keysOldState[256];
+
+	INT f_iMousePosX;
+	INT f_iMousePosY;
+
+	std::atomic<bool> f_bAtomActive;
+	std::mutex f_mutexEngineLoop;
+	std::mutex f_mutexBuffer;
+	std::condition_variable f_cvEngineLoopFinished;
 
 private:
 	bool f_bShowFps;
