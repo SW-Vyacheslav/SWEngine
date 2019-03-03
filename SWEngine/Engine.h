@@ -6,11 +6,6 @@
 
 #include <Windows.h>
 #include <chrono>
-#include <iostream>
-#include <vector>
-#include <fstream>
-#include <strstream>
-#include <algorithm>
 #include <thread>
 #include <mutex>
 #include <atomic>
@@ -77,6 +72,10 @@ static struct Color
 	static const COLORREF BLUE = RGB(0, 0, 255);
 	static const COLORREF BLACK = RGB(0, 0, 0);
 	static const COLORREF WHITE = RGB(255, 255, 255);
+	static const COLORREF YELLOW = RGB(255, 255, 0);
+	static const COLORREF MAGENTA = RGB(255, 0, 255);
+	static const COLORREF AQUA = RGB(0, 255, 255);
+	static const COLORREF GREY = RGB(128, 128, 128);
 };
 static struct PenStyle
 {
@@ -88,28 +87,6 @@ static struct PenStyle
 	static const INT DASHDOTDOT = PS_DASHDOTDOT;
 	static const INT INSIDEFRAME = PS_INSIDEFRAME;
 };
-
-/*
-struct Line
-{
-	int x1 = 0;
-	int y1 = 0;
-	int x2 = 0;
-	int y2 = 0;
-
-	bool GetCrossPoint(const Line& line, POINT& outpoint)
-	{
-		float znam = (x1 - x2)*(line.y1 - line.y2) - (y1 - y2)*(line.x1 - line.x2);
-
-		if (znam == 0) return false;
-
-		outpoint.x = ((x1*y2 - y1 * x2)*(line.x1 - line.x2) - (x1 - x2)*(line.x1*line.y2 - line.y1*line.x2)) / znam;
-		outpoint.y = ((x1*y2 - y1 * x2)*(line.y1 - line.y2) - (y1 - y2)*(line.x1*line.y2 - line.y1*line.x2)) / znam;
-
-		return true;
-	}
-};
-*/
 
 class Engine
 {
@@ -244,13 +221,7 @@ public:
 		return &f_keys[keycode];
 	}
 
-protected:
-	virtual VOID OnCreate() {};
-	virtual VOID OnUpdate(float fdeltaTime) {};
-	virtual VOID OnDestroy() {}
-
-	/*
-	VOID DrawLine(const int& x1, const int& y1, const int& x2, const int& y2, const COLORREF& color)
+	VOID DrawLineMy(const int& x1, const int& y1, const int& x2, const int& y2, const COLORREF& color)
 	{
 		if (x1 == x2)
 		{
@@ -269,25 +240,25 @@ protected:
 		}
 	}
 
-	VOID DrawTriangle(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const COLORREF& color)
+	VOID DrawTriangleMy(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const COLORREF& color)
 	{
 		DrawLine(x1, y1, x2, y2, color);
 		DrawLine(x2, y2, x3, y3, color);
 		DrawLine(x3, y3, x1, y1, color);
 	}
 
-	VOID FillTriangle(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const COLORREF& color)
+	VOID FillTriangleMy(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const COLORREF& color)
 	{
 		int miny = min(y1, min(y2, y3));
 		int maxy = max(y1, max(y2, y3));
 		int minx = min(x1, min(x2, x3));
 		int maxx = max(x1, max(x2, x3));
 
-		Line scanline = { minx,miny,maxx,miny };
+		LineMy scanline = { minx,miny,maxx,miny };
 
-		Line AB = { x1,y1,x2,y2 };
-		Line BC = { x2,y2,x3,y3 };
-		Line AC = { x1,y1,x3,y3 };
+		LineMy AB = { x1,y1,x2,y2 };
+		LineMy BC = { x2,y2,x3,y3 };
+		LineMy AC = { x1,y1,x3,y3 };
 
 		POINT crosspoint1;
 		POINT crosspoint2;
@@ -302,9 +273,8 @@ protected:
 			scanline.y1 = scanline.y2 = y + 1;
 		}
 	}
-	*/
 
-	VOID DrawCircle(const int& cx, const int& cy, const int& radius, const COLORREF& color)
+	VOID DrawCircleMy(const int& cx, const int& cy, const int& radius, const COLORREF& color)
 	{
 		for (int x = cx - radius; x <= cx + radius; x++)
 		{
@@ -313,6 +283,16 @@ protected:
 			DrawPixel(x, y, color);
 			DrawPixel(x, y2, color);
 		}
+	}
+
+	VOID FillCircle(const int& cx, const int& cy, const int& radius, const COLORREF& color)
+	{
+		SetCurrentPenStyle(PenStyle::SOLID);
+		SetCurrentPenColor(color);
+		SetCurrentPenWidth(1);
+		SetCurrentBrushColor(color);
+
+		Ellipse(f_hBufferDC,cx-radius,cy-radius,cx+radius,cy+radius);
 	}
 
 	VOID DrawPixel(const int& x, const int& y, const COLORREF& color)
@@ -374,6 +354,16 @@ protected:
 		Polygon(f_hBufferDC, p, 3);
 	}
 
+	VOID FillRectangle(const int& x1, const int& y1, const int& x2, const int& y2, const COLORREF& color)
+	{
+		SetCurrentBrushColor(color);
+		SetCurrentPenColor(color);
+		SetCurrentPenWidth(1);
+		SetCurrentPenStyle(PenStyle::SOLID);
+
+		Rectangle(f_hBufferDC,x1,y1,x2,y2);
+	}
+
 	VOID FillWindow(const COLORREF& color)
 	{
 		SetCurrentBrushColor(color);
@@ -387,6 +377,11 @@ protected:
 	{
 		DrawImage(bitmap, 0, 0, GetClientWidth(), GetClientHeight());
 	}
+
+protected:
+	virtual VOID OnCreate() {};
+	virtual VOID OnUpdate(float fdeltaTime) {};
+	virtual VOID OnDestroy() {}
 
 private:
 	static LRESULT CALLBACK StaticMainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -518,8 +513,8 @@ private:
 				DrawText(f_hBufferDC, mouseposbuf, lstrlen(mouseposbuf), &textRect2, DT_BOTTOM);
 			}
 
-			f_mutexBuffer.lock();
 			//Copying from buffer to screen
+			f_mutexBuffer.lock();
 			StretchBlt
 			(
 				f_hMainWndDC,
@@ -588,6 +583,26 @@ private:
 		}
 	}
 
+	struct LineMy
+	{
+		int x1 = 0;
+		int y1 = 0;
+		int x2 = 0;
+		int y2 = 0;
+
+		bool GetCrossPoint(const LineMy& line, POINT& outpoint)
+		{
+			float znam = (x1 - x2)*(line.y1 - line.y2) - (y1 - y2)*(line.x1 - line.x2);
+
+			if (znam == 0) return false;
+
+			outpoint.x = ((x1*y2 - y1 * x2)*(line.x1 - line.x2) - (x1 - x2)*(line.x1*line.y2 - line.y1*line.x2)) / znam;
+			outpoint.y = ((x1*y2 - y1 * x2)*(line.y1 - line.y2) - (y1 - y2)*(line.x1*line.y2 - line.y1*line.x2)) / znam;
+
+			return true;
+		}
+	};
+
 private:
 	HINSTANCE f_hInstance;
 	HWND f_hMainWnd;
@@ -624,3 +639,6 @@ private:
 	bool f_bShowFps;
 
 };
+
+typedef void (Engine::*DrawCircleFuncPtr)(const int& cx, const int& cy, const int& radius, const COLORREF& color);
+typedef void (Engine::*DrawLineFuncPtr)(const int& x1, const int& y1, const int& x2, const int& y2, const COLORREF& color, const UINT& width, const INT& pen_style);
