@@ -12,90 +12,612 @@
 #include <condition_variable>
 #include <gdiplus.h>
 #include <objidl.h>
+#include <vector>
+#include <list>
 
 #pragma comment (lib,"Gdiplus.lib")
 
-static struct KeyCode
+class ScanLine
 {
-	static const INT A = 0x41;
-	static const INT B = 0x42;
-	static const INT C = 0x43;
-	static const INT D = 0x44;
-	static const INT E = 0x45;
-	static const INT F = 0x46;
-	static const INT G = 0x47;
-	static const INT H = 0x48;
-	static const INT I = 0x49;
-	static const INT J = 0x4A;
-	static const INT K = 0x4B;
-	static const INT L = 0x4C;
-	static const INT M = 0x4D;
-	static const INT N = 0x4E;
-	static const INT O = 0x4F;
-	static const INT P = 0x50;
-	static const INT Q = 0x51;
-	static const INT R = 0x52;
-	static const INT S = 0x53;
-	static const INT T = 0x54;
-	static const INT U = 0x55;
-	static const INT V = 0x56;
-	static const INT W = 0x57;
-	static const INT X = 0x58;
-	static const INT Y = 0x59;
-	static const INT Z = 0x5A;
-	static const INT MOUSELEFT = 0x01;
-	static const INT MOUSERIGHT = 0x02;
-	static const INT MOUSEMIDDLE = 0x04;
-	static const INT BACKSPACE = 0x08;
-	static const INT TAB = 0x09;
-	static const INT ENTER = 0x0D;
-	static const INT SHIFT = 0x10;
-	static const INT CTRL = 0x11;
-	static const INT ALT = 0x12;
-	static const INT ESC = 0x1B;
-	static const INT SPACE = 0x20;
-	static const INT LEFTARROW = 0x25;
-	static const INT UPARROW = 0x26;
-	static const INT RIGHTARROW = 0x27;
-	static const INT DOWNARROW = 0x28;
+public:
+	ScanLine() : x1(0), y1(0), x2(0), y2(0) {}
+	ScanLine(const int& x1, const int& y1, const int& x2, const int& y2) : x1(x1), y1(y1), x2(x2), y2(y2) {}
+
+	void SetY1(const int& y1)
+	{
+		this->y1 = y1;
+	}
+	void SetY2(const int& y2)
+	{
+		this->y2 = y2;
+	}
+
+	bool GetCrossPoint(const ScanLine& line, POINT& outpoint)
+	{
+		int znam = (x1 - x2)*(line.y1 - line.y2) - (y1 - y2)*(line.x1 - line.x2);
+
+		if (znam == 0) return false;
+
+		outpoint.x = ((x1*y2 - y1 * x2)*(line.x1 - line.x2) - (x1 - x2)*(line.x1*line.y2 - line.y1*line.x2)) / znam;
+		outpoint.y = ((x1*y2 - y1 * x2)*(line.y1 - line.y2) - (y1 - y2)*(line.x1*line.y2 - line.y1*line.x2)) / znam;
+
+		return true;
+	}
+
+private:
+	int x1;
+	int y1;
+	int x2;
+	int y2;
 };
-struct KeyInfo
+
+class KeyInfo
 {
+public:
+	KeyInfo() : KeyDown(false), KeyUp(false), KeyPressed(false) {}
+
 	bool KeyDown;
 	bool KeyUp;
 	bool KeyPressed;
 };
-static struct Color
+
+class IColorFormat abstract
 {
-	static const COLORREF RED = RGB(255, 0, 0);
-	static const COLORREF GREEN = RGB(0, 255, 0);
-	static const COLORREF BLUE = RGB(0, 0, 255);
-	static const COLORREF BLACK = RGB(0, 0, 0);
-	static const COLORREF WHITE = RGB(255, 255, 255);
-	static const COLORREF YELLOW = RGB(255, 255, 0);
-	static const COLORREF MAGENTA = RGB(255, 0, 255);
-	static const COLORREF AQUA = RGB(0, 255, 255);
-	static const COLORREF GREY = RGB(128, 128, 128);
+public:
+	virtual void ToRGBColorFormat(int& r, int& g, int& b) const = 0;
+	virtual void ToHSLColorFormat(int& h, int& s, int& l) const = 0;
+	virtual void ToHEXColorFormat(std::string& hex) const = 0;
 };
-static struct PenStyle
+
+class RGBColorFormat : public IColorFormat
 {
-	static const INT SOLID = PS_SOLID;
-	static const INT EMPTY = PS_NULL;
-	static const INT DASH = PS_DASH;
-	static const INT DOT = PS_DOT;
-	static const INT DASHDOT = PS_DASHDOT;
-	static const INT DASHDOTDOT = PS_DASHDOTDOT;
-	static const INT INSIDEFRAME = PS_INSIDEFRAME;
+public:
+	RGBColorFormat() : r(0), g(0), b(0) {}
+	RGBColorFormat(std::initializer_list<int> list)
+	{
+		if (list.size() == 3)
+		{
+			r = *list.begin();
+			g = *(list.begin() + 1);
+			b = *(list.begin() + 2);
+		}
+		else if (list.size() == 2)
+		{
+			r = *list.begin();
+			g = *(list.begin() + 1);
+			b = 0;
+		}
+		else if (list.size() == 1)
+		{
+			r = *list.begin();
+			g = 0;
+			b = 0;
+		}
+		else
+		{
+			r = 0;
+			g = 0;
+			b = 0;
+		}
+
+		if ((r < 0 || r > 255) || (g < 0 || g > 255) || (b < 0 || b > 255))
+		{
+			r = 0;
+			g = 0;
+			b = 0;
+		}
+	}
+	RGBColorFormat(const int& r, const int& g, const int& b)
+	{
+		if ((r >= 0 && r <= 255) && (g >= 0 && g <= 255) && (b >= 0 && b <= 255))
+		{
+			this->r = r;
+			this->g = g;
+			this->b = b;
+		}
+		else
+		{
+			this->r = 0;
+			this->g = 0;
+			this->b = 0;
+		}
+	}
+
+	const int& GetR()
+	{
+		return r;
+	}
+	const int& GetG()
+	{
+		return g;
+	}
+	const int& GetB()
+	{
+		return b;
+	}
+	void SetR(const int& r)
+	{
+		if (r >= 0 && r <= 255) this->r = r;
+	}
+	void SetG(const int& g)
+	{
+		if (g >= 0 && g <= 255) this->g = g;
+	}
+	void SetB(const int& b)
+	{
+		if (b >= 0 && b <= 255) this->b = b;
+	}
+	void SetRGB(const int& r, const int& g, const int& b)
+	{
+		if ((r >= 0 && r <= 255) && (g >= 0 && g <= 255) && (b >= 0 && b <= 255))
+		{
+			this->r = r;
+			this->g = g;
+			this->b = b;
+		}
+	}
+
+	void ToHSLColorFormat(int& h, int& s, int& l) const override
+	{
+
+	}
+	void ToHEXColorFormat(std::string& hex) const override
+	{
+
+	}
+	void ToRGBColorFormat(int& r, int& g, int& b) const override
+	{
+		r = this->r;
+		g = this->g;
+		b = this->b;
+	}
+
+private:
+	int r;
+	int g;
+	int b;
+};
+
+class HSLColorFormat : public IColorFormat
+{
+public:
+	HSLColorFormat() : h(0), s(0), l(0) {}
+	HSLColorFormat(std::initializer_list<int> list)
+	{
+		if (list.size() == 3)
+		{
+			h = *list.begin();
+			s = *(list.begin() + 1);
+			l = *(list.begin() + 2);
+		}
+		else if (list.size() == 2)
+		{
+			h = *list.begin();
+			s = *(list.begin() + 1);
+			l = 0;
+		}
+		else if (list.size() == 1)
+		{
+			h = *list.begin();
+			s = 0;
+			l = 0;
+		}
+		else
+		{
+			h = 0;
+			s = 0;
+			l = 0;
+		}
+
+		if ((h < 0 || h > 360) || (s < 0 || s > 100) || (l < 0 || l > 100))
+		{
+			h = 0;
+			s = 0;
+			l = 0;
+		}
+	}
+	HSLColorFormat(const int& h, const int& s, const int& l)
+	{
+		if ((h >= 0 && h <= 360) && (s >= 0 && s <= 100) && (l >= 0 && l <= 100))
+		{
+			this->h = h;
+			this->s = s;
+			this->l = l;
+		}
+		else
+		{
+			this->h = 0;
+			this->s = 0;
+			this->l = 0;
+		}
+	}
+
+	const int& GetH()
+	{
+		return h;
+	}
+	const int& GetS()
+	{
+		return s;
+	}
+	const int& GetL()
+	{
+		return l;
+	}
+	void SetH(const int& h)
+	{
+		if (h >= 0 && h <= 360) this->h = h;
+	}
+	void SetS(const int& s)
+	{
+		if (s >= 0 && s <= 100) this->s = s;
+	}
+	void SetL(const int& l)
+	{
+		if (l >= 0 && l <= 100) this->l = l;
+	}
+	void SetHSL(const int& h, const int& s, const int& l)
+	{
+		if ((h >= 0 && h <= 360) && (s >= 0 && s <= 100) && (l >= 0 && l <= 100))
+		{
+			this->h = h;
+			this->s = s;
+			this->l = l;
+		}
+	}
+
+	void ToHEXColorFormat(std::string& hex) const override
+	{
+
+	}
+	void ToRGBColorFormat(int& r, int& g, int& b) const override
+	{
+		float c = (1.0f - std::abs(2.0f * ((float)l / 100.0f) - 1.0f)) * ((float)s / 100.0f);
+		float x = c * (1.0f - (float)std::abs((h / 60) % 2 - 1));
+		float m = ((float)l / 100.0f) - ((float)c / 2.0f);
+
+		if (h >= 0 && h < 60)
+		{
+			r = (int)c;
+			g = (int)x;
+			b = 0;
+		}
+		else if (h >= 60 && h < 120)
+		{
+			r = (int)x;
+			g = (int)c;
+			b = 0;
+		}
+		else if (h >= 120 && h < 180)
+		{
+			r = 0;
+			g = (int)c;
+			b = (int)x;
+		}
+		else if (h >= 180 && h < 240)
+		{
+			r = 0;
+			g = (int)x;
+			b = (int)c;
+		}
+		else if (h >= 240 && h < 300)
+		{
+			r = (int)x;
+			g = 0;
+			b = (int)c;
+		}
+		else if (h >= 300 && h < 360)
+		{
+			r = (int)c;
+			g = 0;
+			b = (int)x;
+		}
+
+		r = (int)(((float)r + m) * 255.0f);
+		g = (int)(((float)g + m) * 255.0f);
+		b = (int)(((float)b + m) * 255.0f);
+	}
+	void ToHSLColorFormat(int& h, int& s, int& l) const override
+	{
+		h = this->h;
+		s = this->s;
+		l = this->l;
+	}
+
+private:
+	int h;
+	int s;
+	int l;
+};
+
+class HEXColorFormat : public IColorFormat
+{
+public:
+	HEXColorFormat() : hex("#000000") {}
+	HEXColorFormat(std::initializer_list<std::string> list)
+	{
+		if (list.size() == 1)
+		{
+			hex = *list.begin();
+
+			if (hex[0] == '#' && hex.size() == 7)
+			{
+				for (int i = 1; i < 7; i++)
+				{
+					if ((hex[i] >= '0' && hex[i] <= '9') || (hex[i] >= 'a' && hex[i] <= 'f')) continue;
+					else
+					{
+						hex = "#000000";
+						break;
+					}
+				}
+			}
+			else hex = "#000000";
+		}
+		else hex = "#000000";
+	}
+	HEXColorFormat(const std::string& hex)
+	{
+		if (hex[0] == '#' && hex.size() == 7)
+		{
+			this->hex = hex;
+
+			for (int i = 1; i < 7; i++)
+			{
+				if ((hex[i] >= '0' && hex[i] <= '9') || (hex[i] >= 'a' && hex[i] <= 'f')) continue;
+				else
+				{
+					this->hex = "#000000";
+					break;
+				}
+			}
+		}
+	}
+
+	void ToHSLColorFormat(int& h, int& s, int& l) const override
+	{
+
+	}
+	void ToRGBColorFormat(int& r, int& g, int& b) const override
+	{
+		int num = 0;
+
+		if (hex[1] >= 'a' && hex[1] <= 'f') num = hex[1] - 87;
+		else num = atoi(&hex[1]);
+		r = r | num << 4;
+		if (hex[2] >= 'a' && hex[2] <= 'f') num = hex[2] - 87;
+		else num = atoi(&hex[2]);
+		r = r | num;
+
+		if (hex[3] >= 'a' && hex[3] <= 'f') num = hex[3] - 87;
+		else num = atoi(&hex[3]);
+		g = g | num << 4;
+		if (hex[4] >= 'a' && hex[4] <= 'f') num = hex[4] - 87;
+		else num = atoi(&hex[4]);
+		g = g | num;
+
+		if (hex[5] >= 'a' && hex[5] <= 'f') num = hex[5] - 87;
+		else num = atoi(&hex[5]);
+		b = b | num << 4;
+		if (hex[6] >= 'a' && hex[6] <= 'f') num = hex[6] - 87;
+		else num = atoi(&hex[6]);
+		b = b | num;
+	}
+	void ToHEXColorFormat(std::string& hex) const override
+	{
+		hex = this->hex;
+	}
+
+private:
+	std::string hex;
+};
+
+template<class T>
+class Color
+{
+public:
+	Color(std::initializer_list<int> list)
+	{
+		colorFormat = T(list);
+	}
+
+	T& GetColorFormat()
+	{
+		return colorFormat;
+	}
+
+	COLORREF GetColor() const
+	{
+		IColorFormat* cf = (IColorFormat*)&colorFormat;
+
+		int r = 0;
+		int g = 0;
+		int b = 0;
+		cf->ToRGBColorFormat(r, g, b);
+
+		return RGB(r, g, b);
+	}
+	static COLORREF GetColor(Color<T>& col)
+	{
+		IColorFormat* cf = (IColorFormat*)&col.GetColorFormat();
+
+		int r = 0;
+		int g = 0;
+		int b = 0;
+		cf->ToRGBColorFormat(r, g, b);
+
+		return RGB(r, g, b);
+	}
+
+private:
+	T colorFormat;
+};
+
+struct _KeyCode
+{
+	const INT A = 0x41;
+	const INT B = 0x42;
+	const INT C = 0x43;
+	const INT D = 0x44;
+	const INT E = 0x45;
+	const INT F = 0x46;
+	const INT G = 0x47;
+	const INT H = 0x48;
+	const INT I = 0x49;
+	const INT J = 0x4A;
+	const INT K = 0x4B;
+	const INT L = 0x4C;
+	const INT M = 0x4D;
+	const INT N = 0x4E;
+	const INT O = 0x4F;
+	const INT P = 0x50;
+	const INT Q = 0x51;
+	const INT R = 0x52;
+	const INT S = 0x53;
+	const INT T = 0x54;
+	const INT U = 0x55;
+	const INT V = 0x56;
+	const INT W = 0x57;
+	const INT X = 0x58;
+	const INT Y = 0x59;
+	const INT Z = 0x5A;
+	const INT MOUSELEFT = 0x01;
+	const INT MOUSERIGHT = 0x02;
+	const INT MOUSEMIDDLE = 0x04;
+	const INT BACKSPACE = 0x08;
+	const INT TAB = 0x09;
+	const INT ENTER = 0x0D;
+	const INT SHIFT = 0x10;
+	const INT CTRL = 0x11;
+	const INT ALT = 0x12;
+	const INT ESC = 0x1B;
+	const INT SPACE = 0x20;
+	const INT LEFTARROW = 0x25;
+	const INT UPARROW = 0x26;
+	const INT RIGHTARROW = 0x27;
+	const INT DOWNARROW = 0x28;
+} KeyCode;
+struct _Colors
+{
+	const Color<RGBColorFormat> RED = { 255,0,0 };
+	const Color<RGBColorFormat> GREEN = { 0, 255, 0 };
+	const Color<RGBColorFormat> BLUE = { 0, 0, 255 };
+	const Color<RGBColorFormat> BLACK = { 0, 0, 0 };
+	const Color<RGBColorFormat> WHITE = { 255, 255, 255 };
+	const Color<RGBColorFormat> YELLOW = { 255, 255, 0 };
+	const Color<RGBColorFormat> MAGENTA = { 255, 0, 255 };
+	const Color<RGBColorFormat> AQUA = { 0, 255, 255 };
+	const Color<RGBColorFormat> GREY = { 128, 128, 128 };
+} Colors;
+struct _PenStyle
+{
+	const INT SOLID = PS_SOLID;
+	const INT EMPTY = PS_NULL;
+	const INT DASH = PS_DASH;
+	const INT DOT = PS_DOT;
+	const INT DASHDOT = PS_DASHDOT;
+	const INT DASHDOTDOT = PS_DASHDOTDOT;
+	const INT INSIDEFRAME = PS_INSIDEFRAME;
+} PenStyle;
+
+class UIElement abstract
+{
+public:
+	UIElement() : x(0), y(0), width(10), height(10), isFocused(false), backgroundColor(Colors.GREY), foregroundColor(Colors.BLACK) {}
+
+	void SetX(const int& x)
+	{
+		this->x = x;
+	}
+	void SetY(const int& y)
+	{
+		this->y = y;
+	}
+	void SetWidth(const int& width)
+	{
+		this->width = width;
+	}
+	void SetHeigth(const int& height)
+	{
+		this->height = height;
+	}
+	void SetText(const std::wstring& text)
+	{
+		this->text = text;
+	}
+
+	const int& GetX() const
+	{
+		return x;
+	}
+	const int& GetY() const
+	{
+		return y;
+	}
+	const int& GetWidth() const
+	{
+		return width;
+	}
+	const int& GetHeight() const
+	{
+		return height;
+	}
+	const Color<RGBColorFormat>& GetBackgroundColor() const
+	{
+		return backgroundColor;
+	}
+	const Color<RGBColorFormat>& GetForegroundColor() const
+	{
+		return foregroundColor;
+	}
+	const std::wstring& GetText() const
+	{
+		return text;
+	}
+
+	virtual void Draw(void* eng) const = 0;
+
+	const bool& IsFocused() const
+	{
+		return isFocused;
+	}
+	void SetFocus()
+	{
+		isFocused = true;
+	}
+	void UnsetFocus()
+	{
+		isFocused = false;
+	}
+
+	bool IsMouseHover(const float& mousex, const float& mousey) const
+	{
+		if (mousex <= x + width && mousex >= x)
+		{
+			if (mousey <= y + height && mousey >= y)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+private:
+	int x;
+	int y;
+	int width;
+	int height;
+	bool isFocused;
+	std::wstring text;
+	Color<RGBColorFormat> backgroundColor;
+	Color<RGBColorFormat> foregroundColor;
 };
 
 class Engine
 {
 public:
-	explicit Engine()
-	{
-		f_bShowFps = false;
-		f_bAtomActive = false;
-	}
+	Engine() : f_bShowFps(false), f_bAtomActive(false) {}
 
 	VOID Start(UINT windowWidth, UINT windowHeight)
 	{
@@ -152,12 +674,12 @@ public:
 		f_hMainWndDC = GetDC(f_hMainWnd);
 		f_hBufferDC = CreateCompatibleDC(f_hMainWndDC);
 		f_hBufferBitmap = CreateCompatibleBitmap(f_hMainWndDC, GetClientWidth(), GetClientHeight());
-		f_hCurrentBrush = CreateSolidBrush(Color::BLACK);
-		f_hCurrentPen = CreatePen(PenStyle::SOLID, 1, Color::BLACK);
-		f_cCurrentBrushColor = Color::BLACK;
-		f_cCurrentPenColor = Color::BLACK;
+		f_hCurrentBrush = CreateSolidBrush(Colors.BLACK.GetColor());
+		f_hCurrentPen = CreatePen(PenStyle.SOLID, 1, Colors.BLACK.GetColor());
+		f_cCurrentBrushColor = Colors.BLACK.GetColor();
+		f_cCurrentPenColor = Colors.BLACK.GetColor();
 		f_iCurrentPenWidth = 1;
-		f_iCurrentPenStyle = PenStyle::SOLID;
+		f_iCurrentPenStyle = PenStyle.SOLID;
 		SelectObject(f_hBufferDC, f_hBufferBitmap);
 		SelectObject(f_hBufferDC, f_hCurrentBrush);
 		SelectObject(f_hBufferDC, f_hCurrentPen);
@@ -182,6 +704,11 @@ public:
 		engine_thread.join();
 
 		Gdiplus::GdiplusShutdown(gdiplusToken);
+	}
+
+	VOID AddUIElement(UIElement& el)
+	{
+		f_vuiElements.push_back(&el);
 	}
 
 	UINT GetClientWidth() const
@@ -221,86 +748,129 @@ public:
 		return &f_keys[keycode];
 	}
 
-	VOID DrawLineMy(const int& x1, const int& y1, const int& x2, const int& y2, const COLORREF& color)
+	//SWEngine drawing methods
+	VOID DrawLine(const int& x1, const int& y1, const int& x2, const int& y2, const IColorFormat& color)
 	{
-		if (x1 == x2)
+		const int deltaX = abs(x2 - x1);
+		const int deltaY = abs(y2 - y1);
+		const int signX = x1 < x2 ? 1 : -1;
+		const int signY = y1 < y2 ? 1 : -1;
+		int error = deltaX - deltaY;
+
+		int r = 0;
+		int g = 0;
+		int b = 0;
+		color.ToRGBColorFormat(r, g, b);
+		DrawPixelWinAPI(x2, y2, Color<RGBColorFormat>({ r,g,b }).GetColor());
+
+		int x = x1;
+		int y = y1;
+		while (x != x2 || y != y2)
 		{
-			for (int y = y1; y <= y2; y++)
+			DrawPixelWinAPI(x, y, Color<RGBColorFormat>({ r,g,b }).GetColor());
+
+			const int error2 = error * 2;
+			if (error2 > -deltaY)
 			{
-				DrawPixel(x1, y, color);
+				error -= deltaY;
+				x += signX;
 			}
-		}
-		else
-		{
-			for (int x = x1; x <= x2; x++)
+			if (error2 < deltaX)
 			{
-				int y = (((x - x1)*(y2 - y1)) / (x2 - x1)) + y1;
-				DrawPixel(x, y, color);
+				error += deltaX;
+				y += signY;
 			}
 		}
 	}
 
-	VOID DrawTriangleMy(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const COLORREF& color)
+	VOID DrawTriangle(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const IColorFormat& color)
 	{
 		DrawLine(x1, y1, x2, y2, color);
 		DrawLine(x2, y2, x3, y3, color);
 		DrawLine(x3, y3, x1, y1, color);
 	}
 
-	VOID FillTriangleMy(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const COLORREF& color)
+	VOID FillTriangle(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const IColorFormat& color)
 	{
 		int miny = min(y1, min(y2, y3));
 		int maxy = max(y1, max(y2, y3));
 		int minx = min(x1, min(x2, x3));
 		int maxx = max(x1, max(x2, x3));
 
-		LineMy scanline = { minx,miny,maxx,miny };
+		ScanLine scanline = { minx,miny,maxx,miny };
 
-		LineMy AB = { x1,y1,x2,y2 };
-		LineMy BC = { x2,y2,x3,y3 };
-		LineMy AC = { x1,y1,x3,y3 };
+		ScanLine AB = { x1,y1,x2,y2 };
+		ScanLine BC = { x2,y2,x3,y3 };
+		ScanLine AC = { x1,y1,x3,y3 };
 
 		POINT crosspoint1;
 		POINT crosspoint2;
 
-		for (int y = miny; y <= maxy; y+=1)
+		for (int y = miny; y <= maxy; y += 1)
 		{
-			scanline.GetCrossPoint(AB,crosspoint1);
-			scanline.GetCrossPoint(BC,crosspoint2);
+			scanline.GetCrossPoint(AB, crosspoint1);
+			scanline.GetCrossPoint(BC, crosspoint2);
 
-			DrawLine(crosspoint1.x,crosspoint1.y, crosspoint2.x, crosspoint2.y, color);
+			DrawLine(crosspoint1.x, crosspoint1.y, crosspoint2.x, crosspoint2.y, color);
 
-			scanline.y1 = scanline.y2 = y + 1;
+			scanline.SetY1(y + 1);
+			scanline.SetY2(y + 1);
+		}
+	}
+	
+	VOID DrawCircle(const int& cx, const int& cy, const int& radius, const IColorFormat& color)
+	{
+		int x = 0;
+		int y = radius;
+		int delta = 1 - 2 * radius;
+		int error = 0;
+
+		int r = 0;
+		int g = 0;
+		int b = 0;
+		color.ToRGBColorFormat(r, g, b);
+
+		while (y >= 0)
+		{
+			DrawPixelWinAPI(cx + x, cy + y, Color<RGBColorFormat>({ r,g,b }).GetColor());
+			DrawPixelWinAPI(cx + x, cy - y, Color<RGBColorFormat>({ r,g,b }).GetColor());
+			DrawPixelWinAPI(cx - x, cy + y, Color<RGBColorFormat>({ r,g,b }).GetColor());
+			DrawPixelWinAPI(cx - x, cy - y, Color<RGBColorFormat>({ r,g,b }).GetColor());
+			error = 2 * (delta + y) - 1;
+			if (delta < 0 && error <= 0) {
+				++x;
+				delta += 2 * x + 1;
+				continue;
+			}
+			error = 2 * (delta - x) - 1;
+			if (delta > 0 && error > 0) {
+				--y;
+				delta += 1 - 2 * y;
+				continue;
+			}
+			++x;
+			delta += 2 * (x - y);
+			--y;
 		}
 	}
 
-	VOID DrawCircleMy(const int& cx, const int& cy, const int& radius, const COLORREF& color)
+	//WinAPI drawing methods
+	VOID FillCircleWinAPI(const int& cx, const int& cy, const int& radius, const COLORREF& color)
 	{
-		for (int x = cx - radius; x <= cx + radius; x++)
-		{
-			int y = (int)sqrtf((radius*radius) - ((x - cx)*(x - cx))) + cy;
-			int y2 = -y + 2 * cy;
-			DrawPixel(x, y, color);
-			DrawPixel(x, y2, color);
-		}
-	}
-
-	VOID FillCircle(const int& cx, const int& cy, const int& radius, const COLORREF& color)
-	{
-		SetCurrentPenStyle(PenStyle::SOLID);
+		SetCurrentPenStyle(PenStyle.SOLID);
 		SetCurrentPenColor(color);
 		SetCurrentPenWidth(1);
 		SetCurrentBrushColor(color);
 
-		Ellipse(f_hBufferDC,cx-radius,cy-radius,cx+radius,cy+radius);
+		Ellipse(f_hBufferDC, cx - radius, cy - radius, cx + radius, cy + radius);
 	}
 
-	VOID DrawPixel(const int& x, const int& y, const COLORREF& color)
+	VOID DrawPixelWinAPI(const int& x, const int& y, const COLORREF& color)
 	{
 		SetPixel(f_hBufferDC, x, y, color);
 	}
 
-	VOID DrawLine(const int& x1, const int& y1, const int& x2, const int& y2, const COLORREF& color, const UINT& width = 1, const INT& pen_style = PenStyle::SOLID)
+	VOID DrawLineWinAPI(const int& x1, const int& y1, const int& x2, const int& y2, const COLORREF& color, const UINT& width = 1, const INT& pen_style = PenStyle.SOLID)
 	{
 		SetCurrentPenColor(color);
 		SetCurrentPenWidth(width);
@@ -310,14 +880,24 @@ public:
 		LineTo(f_hBufferDC, x2, y2);
 	}
 
-	VOID DrawTriangle(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const COLORREF& color, const UINT& border_width = 1, const INT& pen_style = PenStyle::SOLID)
+	VOID DrawTriangleWinAPI(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const COLORREF& color, const UINT& border_width = 1, const INT& pen_style = PenStyle.SOLID)
 	{
-		DrawLine(x1, y1, x2, y2, color, border_width, pen_style);
-		DrawLine(x2, y2, x3, y3, color, border_width, pen_style);
-		DrawLine(x3, y3, x1, y1, color, border_width, pen_style);
+		DrawLineWinAPI(x1, y1, x2, y2, color, border_width, pen_style);
+		DrawLineWinAPI(x2, y2, x3, y3, color, border_width, pen_style);
+		DrawLineWinAPI(x3, y3, x1, y1, color, border_width, pen_style);
 	}
 
-	VOID DrawImage(const HBITMAP& bitmap, const int& x1, const int& y1, const UINT& width = 0, const UINT& height = 0)
+	VOID DrawStringWinAPI(LPCWSTR str, const int& x1, const int& y1, const int& x2, const int& y2, const COLORREF& textcolor)
+	{
+		RECT textRect = { x1,y1,x2,y2 };
+		int prevmode = SetBkMode(f_hBufferDC, TRANSPARENT);
+		COLORREF prevcolor = SetTextColor(f_hBufferDC, textcolor);
+		DrawText(f_hBufferDC, str, lstrlenW(str), &textRect, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
+		SetBkMode(f_hBufferDC, prevmode);
+		SetTextColor(f_hBufferDC, prevcolor);
+	}
+
+	VOID DrawImageWinAPI(const HBITMAP& bitmap, const int& x1, const int& y1, const UINT& width = 0, const UINT& height = 0)
 	{
 		HDC hDC = CreateCompatibleDC(f_hMainWndDC);
 		SelectObject(hDC, bitmap);
@@ -328,19 +908,10 @@ public:
 		DeleteDC(hDC);
 	}
 
-	HBITMAP LoadHBitmap(const LPCWSTR filename)
-	{
-		HBITMAP hbm;
-		Gdiplus::Bitmap bm(filename);
-		bm.GetHBITMAP(Gdiplus::Color(0, 0, 0), &hbm);
-
-		return hbm;
-	}
-
-	VOID FillTriangle(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const COLORREF& color)
+	VOID FillTriangleWinAPI(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const COLORREF& color)
 	{
 		SetCurrentBrushColor(color);
-		SetCurrentPenStyle(PenStyle::SOLID);
+		SetCurrentPenStyle(PenStyle.SOLID);
 		SetCurrentPenColor(color);
 		SetCurrentPenWidth(1);
 
@@ -354,28 +925,37 @@ public:
 		Polygon(f_hBufferDC, p, 3);
 	}
 
-	VOID FillRectangle(const int& x1, const int& y1, const int& x2, const int& y2, const COLORREF& color)
+	VOID FillRectangleWinAPI(const int& x1, const int& y1, const int& x2, const int& y2, const COLORREF& color)
 	{
 		SetCurrentBrushColor(color);
 		SetCurrentPenColor(color);
 		SetCurrentPenWidth(1);
-		SetCurrentPenStyle(PenStyle::SOLID);
+		SetCurrentPenStyle(PenStyle.SOLID);
 
-		Rectangle(f_hBufferDC,x1,y1,x2,y2);
+		Rectangle(f_hBufferDC, x1, y1, x2, y2);
 	}
 
-	VOID FillWindow(const COLORREF& color)
+	VOID FillWindowWinAPI(const COLORREF& color)
 	{
 		SetCurrentBrushColor(color);
-		SetCurrentPenStyle(PenStyle::SOLID);
+		SetCurrentPenStyle(PenStyle.SOLID);
 		SetCurrentPenColor(color);
 
 		Rectangle(f_hBufferDC, 0, 0, GetClientWidth(), GetClientHeight());
 	}
 
-	VOID FillWindow(const HBITMAP& bitmap)
+	VOID FillWindowWinAPI(const HBITMAP& bitmap)
 	{
-		DrawImage(bitmap, 0, 0, GetClientWidth(), GetClientHeight());
+		DrawImageWinAPI(bitmap, 0, 0, GetClientWidth(), GetClientHeight());
+	}
+
+	HBITMAP LoadHBitmap(const LPCWSTR filename)
+	{
+		HBITMAP hbm;
+		Gdiplus::Bitmap bm(filename);
+		bm.GetHBITMAP(Gdiplus::Color(0, 0, 0), &hbm);
+
+		return hbm;
 	}
 
 protected:
@@ -423,14 +1003,6 @@ private:
 			break;
 		}
 
-		case WM_MOUSEMOVE:
-		{
-			f_iMousePosX = LOWORD(lParam);
-			f_iMousePosY = HIWORD(lParam);
-
-			break;
-		}
-
 		case WM_SYSCOMMAND:
 		{
 			if (wParam == SC_CLOSE)
@@ -469,6 +1041,13 @@ private:
 			f_timePoint2 = std::chrono::system_clock::now();
 			std::chrono::duration<float> deltaTime = f_timePoint2 - f_timePoint1;
 			f_timePoint1 = f_timePoint2;
+
+			//Get mouse position
+			POINT mousePos;
+			GetCursorPos(&mousePos);
+			ScreenToClient(f_hMainWnd, &mousePos);
+			f_iMousePosX = mousePos.x;
+			f_iMousePosY = mousePos.y;
 
 			//Keys info update
 			for (int i = 0; i < 256; i++)
@@ -511,6 +1090,11 @@ private:
 				RECT textRect2 = { 0,20,lstrlen(mouseposbuf) * 10,45 };
 				DrawText(f_hBufferDC, fpsbuf, lstrlen(fpsbuf), &textRect, NULL);
 				DrawText(f_hBufferDC, mouseposbuf, lstrlen(mouseposbuf), &textRect2, DT_BOTTOM);
+			}
+
+			for (UIElement* el : f_vuiElements)
+			{
+				el->Draw(this);
 			}
 
 			//Copying from buffer to screen
@@ -583,26 +1167,6 @@ private:
 		}
 	}
 
-	struct LineMy
-	{
-		int x1 = 0;
-		int y1 = 0;
-		int x2 = 0;
-		int y2 = 0;
-
-		bool GetCrossPoint(const LineMy& line, POINT& outpoint)
-		{
-			float znam = (x1 - x2)*(line.y1 - line.y2) - (y1 - y2)*(line.x1 - line.x2);
-
-			if (znam == 0) return false;
-
-			outpoint.x = ((x1*y2 - y1 * x2)*(line.x1 - line.x2) - (x1 - x2)*(line.x1*line.y2 - line.y1*line.x2)) / znam;
-			outpoint.y = ((x1*y2 - y1 * x2)*(line.y1 - line.y2) - (y1 - y2)*(line.x1*line.y2 - line.y1*line.x2)) / znam;
-
-			return true;
-		}
-	};
-
 private:
 	HINSTANCE f_hInstance;
 	HWND f_hMainWnd;
@@ -635,10 +1199,18 @@ private:
 	std::mutex f_mutexBuffer;
 	std::condition_variable f_cvEngineLoopFinished;
 
+	std::vector<UIElement*> f_vuiElements;
+
 private:
 	bool f_bShowFps;
 
 };
 
-typedef void (Engine::*DrawCircleFuncPtr)(const int& cx, const int& cy, const int& radius, const COLORREF& color);
-typedef void (Engine::*DrawLineFuncPtr)(const int& x1, const int& y1, const int& x2, const int& y2, const COLORREF& color, const UINT& width, const INT& pen_style);
+class Button : public UIElement
+{
+	void Draw(void* eng) const override
+	{
+		((Engine*)eng)->FillRectangleWinAPI(GetX(), GetY(), GetX() + GetWidth(), GetY() + GetHeight(), GetBackgroundColor().GetColor());
+		((Engine*)eng)->DrawStringWinAPI(GetText().c_str(), GetX(), GetY(), GetX() + GetWidth(), GetY() + GetHeight(), GetForegroundColor().GetColor());
+	}
+};
