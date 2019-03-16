@@ -61,53 +61,11 @@ public:
 	bool KeyPressed;
 };
 
-class IColorFormat abstract
+class RGBValue
 {
 public:
-	virtual void ToRGBColorFormat(int& r, int& g, int& b) const = 0;
-	virtual void ToHSLColorFormat(int& h, int& s, int& l) const = 0;
-	virtual void ToHEXColorFormat(std::string& hex) const = 0;
-};
-
-class RGBColorFormat : public IColorFormat
-{
-public:
-	RGBColorFormat() : r(0), g(0), b(0) {}
-	RGBColorFormat(std::initializer_list<int> list)
-	{
-		if (list.size() == 3)
-		{
-			r = *list.begin();
-			g = *(list.begin() + 1);
-			b = *(list.begin() + 2);
-		}
-		else if (list.size() == 2)
-		{
-			r = *list.begin();
-			g = *(list.begin() + 1);
-			b = 0;
-		}
-		else if (list.size() == 1)
-		{
-			r = *list.begin();
-			g = 0;
-			b = 0;
-		}
-		else
-		{
-			r = 0;
-			g = 0;
-			b = 0;
-		}
-
-		if ((r < 0 || r > 255) || (g < 0 || g > 255) || (b < 0 || b > 255))
-		{
-			r = 0;
-			g = 0;
-			b = 0;
-		}
-	}
-	RGBColorFormat(const int& r, const int& g, const int& b)
+	RGBValue() : r(0), g(0), b(0) {}
+	RGBValue(const int& r, const int& g, const int& b)
 	{
 		if ((r >= 0 && r <= 255) && (g >= 0 && g <= 255) && (b >= 0 && b <= 255))
 		{
@@ -123,15 +81,15 @@ public:
 		}
 	}
 
-	const int& GetR()
+	const int& GetR() const
 	{
 		return r;
 	}
-	const int& GetG()
+	const int& GetG() const
 	{
 		return g;
 	}
-	const int& GetB()
+	const int& GetB() const
 	{
 		return b;
 	}
@@ -157,66 +115,16 @@ public:
 		}
 	}
 
-	void ToHSLColorFormat(int& h, int& s, int& l) const override
-	{
-
-	}
-	void ToHEXColorFormat(std::string& hex) const override
-	{
-
-	}
-	void ToRGBColorFormat(int& r, int& g, int& b) const override
-	{
-		r = this->r;
-		g = this->g;
-		b = this->b;
-	}
-
 private:
 	int r;
 	int g;
 	int b;
 };
-
-class HSLColorFormat : public IColorFormat
+class HSLValue
 {
 public:
-	HSLColorFormat() : h(0), s(0), l(0) {}
-	HSLColorFormat(std::initializer_list<int> list)
-	{
-		if (list.size() == 3)
-		{
-			h = *list.begin();
-			s = *(list.begin() + 1);
-			l = *(list.begin() + 2);
-		}
-		else if (list.size() == 2)
-		{
-			h = *list.begin();
-			s = *(list.begin() + 1);
-			l = 0;
-		}
-		else if (list.size() == 1)
-		{
-			h = *list.begin();
-			s = 0;
-			l = 0;
-		}
-		else
-		{
-			h = 0;
-			s = 0;
-			l = 0;
-		}
-
-		if ((h < 0 || h > 360) || (s < 0 || s > 100) || (l < 0 || l > 100))
-		{
-			h = 0;
-			s = 0;
-			l = 0;
-		}
-	}
-	HSLColorFormat(const int& h, const int& s, const int& l)
+	HSLValue() : h(0), s(0), l(0) {}
+	HSLValue(const int& h, const int& s, const int& l)
 	{
 		if ((h >= 0 && h <= 360) && (s >= 0 && s <= 100) && (l >= 0 && l <= 100))
 		{
@@ -232,15 +140,15 @@ public:
 		}
 	}
 
-	const int& GetH()
+	const int& GetH() const
 	{
 		return h;
 	}
-	const int& GetS()
+	const int& GetS() const
 	{
 		return s;
 	}
-	const int& GetL()
+	const int& GetL() const
 	{
 		return l;
 	}
@@ -266,47 +174,95 @@ public:
 		}
 	}
 
+private:
+	int h;
+	int s;
+	int l;
+};
+
+class IColorFormat abstract
+{
+public:
+	virtual void ToRGBColorFormat(int& r, int& g, int& b) const = 0;
+	virtual void ToRGBColorFormat(RGBValue& val) const = 0;
+	virtual void ToHSLColorFormat(int& h, int& s, int& l) const = 0;
+	virtual void ToHSLColorFormat(HSLValue& val) const = 0;
+	virtual void ToHEXColorFormat(std::string& hex) const = 0;
+};
+class RGBColorFormat : public IColorFormat, RGBValue
+{
+public:
+	RGBColorFormat() : RGBValue() {}
+	RGBColorFormat(const int& r, const int& g, const int& b) : RGBValue(r,g,b) {}
+
+	void ToRGBColorFormat(int& r, int& g, int& b) const override
+	{
+		r = GetR();
+		g = GetG();
+		b = GetB();
+	}
+	void ToRGBColorFormat(RGBValue& val) const override
+	{
+		val.SetR(GetR());
+		val.SetG(GetG());
+		val.SetB(GetB());
+	}
+	void ToHSLColorFormat(int& h, int& s, int& l) const override
+	{
+
+	}
+	void ToHSLColorFormat(HSLValue& val) const override
+	{
+
+	}
 	void ToHEXColorFormat(std::string& hex) const override
 	{
 
 	}
+};
+class HSLColorFormat : public IColorFormat, HSLValue
+{
+public:
+	HSLColorFormat() : HSLValue() {}
+	HSLColorFormat(const int& h, const int& s, const int& l) : HSLValue(h, s, l) {}
+
 	void ToRGBColorFormat(int& r, int& g, int& b) const override
 	{
-		float c = (1.0f - std::abs(2.0f * ((float)l / 100.0f) - 1.0f)) * ((float)s / 100.0f);
-		float x = c * (1.0f - (float)std::abs((h / 60) % 2 - 1));
-		float m = ((float)l / 100.0f) - ((float)c / 2.0f);
+		float c = (1.0f - std::abs(2.0f * ((float)GetL() / 100.0f) - 1.0f)) * ((float)GetS() / 100.0f);
+		float x = c * (1.0f - (float)std::abs((GetH() / 60) % 2 - 1));
+		float m = ((float)GetL() / 100.0f) - ((float)c / 2.0f);
 
-		if (h >= 0 && h < 60)
+		if (GetH() >= 0 && GetH() < 60)
 		{
 			r = (int)c;
 			g = (int)x;
 			b = 0;
 		}
-		else if (h >= 60 && h < 120)
+		else if (GetH() >= 60 && GetH() < 120)
 		{
 			r = (int)x;
 			g = (int)c;
 			b = 0;
 		}
-		else if (h >= 120 && h < 180)
+		else if (GetH() >= 120 && GetH() < 180)
 		{
 			r = 0;
 			g = (int)c;
 			b = (int)x;
 		}
-		else if (h >= 180 && h < 240)
+		else if (GetH() >= 180 && GetH() < 240)
 		{
 			r = 0;
 			g = (int)x;
 			b = (int)c;
 		}
-		else if (h >= 240 && h < 300)
+		else if (GetH() >= 240 && GetH() < 300)
 		{
 			r = (int)x;
 			g = 0;
 			b = (int)c;
 		}
-		else if (h >= 300 && h < 360)
+		else if (GetH() >= 300 && GetH() < 360)
 		{
 			r = (int)c;
 			g = 0;
@@ -317,45 +273,37 @@ public:
 		g = (int)(((float)g + m) * 255.0f);
 		b = (int)(((float)b + m) * 255.0f);
 	}
+	void ToRGBColorFormat(RGBValue& val) const override
+	{
+		int r = 0;
+		int g = 0;
+		int b = 0;
+		ToRGBColorFormat(r, g, b);
+		val.SetR(r);
+		val.SetG(g);
+		val.SetB(b);
+	}
 	void ToHSLColorFormat(int& h, int& s, int& l) const override
 	{
-		h = this->h;
-		s = this->s;
-		l = this->l;
+		h = GetH();
+		s = GetS();
+		l = GetL();
 	}
+	void ToHSLColorFormat(HSLValue& val) const override
+	{
+		val.SetH(GetH());
+		val.SetS(GetS());
+		val.SetL(GetL());
+	}
+	void ToHEXColorFormat(std::string& hex) const override
+	{
 
-private:
-	int h;
-	int s;
-	int l;
+	}
 };
-
 class HEXColorFormat : public IColorFormat
 {
 public:
 	HEXColorFormat() : hex("#000000") {}
-	HEXColorFormat(std::initializer_list<std::string> list)
-	{
-		if (list.size() == 1)
-		{
-			hex = *list.begin();
-
-			if (hex[0] == '#' && hex.size() == 7)
-			{
-				for (int i = 1; i < 7; i++)
-				{
-					if ((hex[i] >= '0' && hex[i] <= '9') || (hex[i] >= 'a' && hex[i] <= 'f')) continue;
-					else
-					{
-						hex = "#000000";
-						break;
-					}
-				}
-			}
-			else hex = "#000000";
-		}
-		else hex = "#000000";
-	}
 	HEXColorFormat(const std::string& hex)
 	{
 		if (hex[0] == '#' && hex.size() == 7)
@@ -374,10 +322,6 @@ public:
 		}
 	}
 
-	void ToHSLColorFormat(int& h, int& s, int& l) const override
-	{
-
-	}
 	void ToRGBColorFormat(int& r, int& g, int& b) const override
 	{
 		int num = 0;
@@ -403,6 +347,24 @@ public:
 		else num = atoi(&hex[6]);
 		b = b | num;
 	}
+	void ToRGBColorFormat(RGBValue& val) const override
+	{
+		int r = 0;
+		int g = 0;
+		int b = 0;
+		ToRGBColorFormat(r, g, b);
+		val.SetR(r);
+		val.SetG(g);
+		val.SetB(b);
+	}
+	void ToHSLColorFormat(int& h, int& s, int& l) const override
+	{
+
+	}
+	void ToHSLColorFormat(HSLValue& val) const override
+	{
+
+	}
 	void ToHEXColorFormat(std::string& hex) const override
 	{
 		hex = this->hex;
@@ -410,47 +372,6 @@ public:
 
 private:
 	std::string hex;
-};
-
-template<class T>
-class Color
-{
-public:
-	Color(std::initializer_list<int> list)
-	{
-		colorFormat = T(list);
-	}
-
-	T& GetColorFormat()
-	{
-		return colorFormat;
-	}
-
-	COLORREF GetColor() const
-	{
-		IColorFormat* cf = (IColorFormat*)&colorFormat;
-
-		int r = 0;
-		int g = 0;
-		int b = 0;
-		cf->ToRGBColorFormat(r, g, b);
-
-		return RGB(r, g, b);
-	}
-	static COLORREF GetColor(Color<T>& col)
-	{
-		IColorFormat* cf = (IColorFormat*)&col.GetColorFormat();
-
-		int r = 0;
-		int g = 0;
-		int b = 0;
-		cf->ToRGBColorFormat(r, g, b);
-
-		return RGB(r, g, b);
-	}
-
-private:
-	T colorFormat;
 };
 
 struct _KeyCode
@@ -499,15 +420,15 @@ struct _KeyCode
 } KeyCode;
 struct _Colors
 {
-	const Color<RGBColorFormat> RED = { 255,0,0 };
-	const Color<RGBColorFormat> GREEN = { 0, 255, 0 };
-	const Color<RGBColorFormat> BLUE = { 0, 0, 255 };
-	const Color<RGBColorFormat> BLACK = { 0, 0, 0 };
-	const Color<RGBColorFormat> WHITE = { 255, 255, 255 };
-	const Color<RGBColorFormat> YELLOW = { 255, 255, 0 };
-	const Color<RGBColorFormat> MAGENTA = { 255, 0, 255 };
-	const Color<RGBColorFormat> AQUA = { 0, 255, 255 };
-	const Color<RGBColorFormat> GREY = { 128, 128, 128 };
+	const RGBColorFormat RED = { 255,0,0 };
+	const RGBColorFormat GREEN = { 0, 255, 0 };
+	const RGBColorFormat BLUE = { 0, 0, 255 };
+	const RGBColorFormat BLACK = { 0, 0, 0 };
+	const RGBColorFormat WHITE = { 255, 255, 255 };
+	const RGBColorFormat YELLOW = { 255, 255, 0 };
+	const RGBColorFormat MAGENTA = { 255, 0, 255 };
+	const RGBColorFormat AQUA = { 0, 255, 255 };
+	const RGBColorFormat GREY = { 128, 128, 128 };
 } Colors;
 struct _PenStyle
 {
@@ -562,11 +483,11 @@ public:
 	{
 		return height;
 	}
-	const Color<RGBColorFormat>& GetBackgroundColor() const
+	const RGBColorFormat& GetBackgroundColor() const
 	{
 		return backgroundColor;
 	}
-	const Color<RGBColorFormat>& GetForegroundColor() const
+	const RGBColorFormat& GetForegroundColor() const
 	{
 		return foregroundColor;
 	}
@@ -610,8 +531,8 @@ private:
 	int height;
 	bool isFocused;
 	std::wstring text;
-	Color<RGBColorFormat> backgroundColor;
-	Color<RGBColorFormat> foregroundColor;
+	RGBColorFormat backgroundColor;
+	RGBColorFormat foregroundColor;
 };
 
 class Engine
@@ -674,10 +595,10 @@ public:
 		f_hMainWndDC = GetDC(f_hMainWnd);
 		f_hBufferDC = CreateCompatibleDC(f_hMainWndDC);
 		f_hBufferBitmap = CreateCompatibleBitmap(f_hMainWndDC, GetClientWidth(), GetClientHeight());
-		f_hCurrentBrush = CreateSolidBrush(Colors.BLACK.GetColor());
-		f_hCurrentPen = CreatePen(PenStyle.SOLID, 1, Colors.BLACK.GetColor());
-		f_cCurrentBrushColor = Colors.BLACK.GetColor();
-		f_cCurrentPenColor = Colors.BLACK.GetColor();
+		f_hCurrentBrush = CreateSolidBrush(ToCOLORREF(Colors.BLACK));
+		f_hCurrentPen = CreatePen(PenStyle.SOLID, 1, ToCOLORREF(Colors.BLACK));
+		f_cCurrentBrushColor = ToCOLORREF(Colors.BLACK);
+		f_cCurrentPenColor = ToCOLORREF(Colors.BLACK);
 		f_iCurrentPenWidth = 1;
 		f_iCurrentPenStyle = PenStyle.SOLID;
 		SelectObject(f_hBufferDC, f_hBufferBitmap);
@@ -709,6 +630,13 @@ public:
 	VOID AddUIElement(UIElement& el)
 	{
 		f_vuiElements.push_back(&el);
+	}
+
+	COLORREF ToCOLORREF(const IColorFormat& format)
+	{
+		RGBValue val;
+		format.ToRGBColorFormat(val);
+		return RGB(val.GetR(), val.GetG(), val.GetB());
 	}
 
 	UINT GetClientWidth() const
@@ -761,13 +689,13 @@ public:
 		int g = 0;
 		int b = 0;
 		color.ToRGBColorFormat(r, g, b);
-		DrawPixelWinAPI(x2, y2, Color<RGBColorFormat>({ r,g,b }).GetColor());
+		DrawPixelWinAPI(x2, y2, ToCOLORREF(color));
 
 		int x = x1;
 		int y = y1;
 		while (x != x2 || y != y2)
 		{
-			DrawPixelWinAPI(x, y, Color<RGBColorFormat>({ r,g,b }).GetColor());
+			DrawPixelWinAPI(x, y, ToCOLORREF(color));
 
 			const int error2 = error * 2;
 			if (error2 > -deltaY)
@@ -817,7 +745,7 @@ public:
 			scanline.SetY2(y + 1);
 		}
 	}
-	
+
 	VOID DrawCircle(const int& cx, const int& cy, const int& radius, const IColorFormat& color)
 	{
 		int x = 0;
@@ -825,17 +753,12 @@ public:
 		int delta = 1 - 2 * radius;
 		int error = 0;
 
-		int r = 0;
-		int g = 0;
-		int b = 0;
-		color.ToRGBColorFormat(r, g, b);
-
 		while (y >= 0)
 		{
-			DrawPixelWinAPI(cx + x, cy + y, Color<RGBColorFormat>({ r,g,b }).GetColor());
-			DrawPixelWinAPI(cx + x, cy - y, Color<RGBColorFormat>({ r,g,b }).GetColor());
-			DrawPixelWinAPI(cx - x, cy + y, Color<RGBColorFormat>({ r,g,b }).GetColor());
-			DrawPixelWinAPI(cx - x, cy - y, Color<RGBColorFormat>({ r,g,b }).GetColor());
+			DrawPixelWinAPI(cx + x, cy + y, ToCOLORREF(color));
+			DrawPixelWinAPI(cx + x, cy - y, ToCOLORREF(color));
+			DrawPixelWinAPI(cx - x, cy + y, ToCOLORREF(color));
+			DrawPixelWinAPI(cx - x, cy - y, ToCOLORREF(color));
 			error = 2 * (delta + y) - 1;
 			if (delta < 0 && error <= 0) {
 				++x;
@@ -1210,7 +1133,7 @@ class Button : public UIElement
 {
 	void Draw(void* eng) const override
 	{
-		((Engine*)eng)->FillRectangleWinAPI(GetX(), GetY(), GetX() + GetWidth(), GetY() + GetHeight(), GetBackgroundColor().GetColor());
-		((Engine*)eng)->DrawStringWinAPI(GetText().c_str(), GetX(), GetY(), GetX() + GetWidth(), GetY() + GetHeight(), GetForegroundColor().GetColor());
+		((Engine*)eng)->FillRectangleWinAPI(GetX(), GetY(), GetX() + GetWidth(), GetY() + GetHeight(), ((Engine*)eng)->ToCOLORREF(GetBackgroundColor()));
+		((Engine*)eng)->DrawStringWinAPI(GetText().c_str(), GetX(), GetY(), GetX() + GetWidth(), GetY() + GetHeight(), ((Engine*)eng)->ToCOLORREF(GetForegroundColor()));
 	}
 };
