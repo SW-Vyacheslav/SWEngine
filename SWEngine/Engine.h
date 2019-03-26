@@ -4,6 +4,8 @@
 #error UNICODE is not enabled for your compiler!
 #endif
 
+#define BST_HOT 0x0200
+
 #include <Windows.h>
 #include <chrono>
 #include <thread>
@@ -80,6 +82,12 @@ public:
 			this->b = 0;
 		}
 	}
+	RGBValue(const RGBValue& val)
+	{
+		this->r = val.r;
+		this->g = val.g;
+		this->b = val.b;
+	}
 
 	const int& GetR() const
 	{
@@ -114,6 +122,12 @@ public:
 			this->b = b;
 		}
 	}
+	void SetRGB(const RGBValue& val)
+	{
+		this->r = val.r;
+		this->g = val.g;
+		this->b = val.b;
+	}
 
 private:
 	int r;
@@ -138,6 +152,12 @@ public:
 			this->s = 0;
 			this->l = 0;
 		}
+	}
+	HSLValue(const HSLValue& val)
+	{
+		this->h = val.h;
+		this->s = val.s;
+		this->l = val.l;
 	}
 
 	const int& GetH() const
@@ -173,6 +193,12 @@ public:
 			this->l = l;
 		}
 	}
+	void SetHSL(const HSLValue& val)
+	{
+		this->h = val.h;
+		this->s = val.s;
+		this->l = val.l;
+	}
 
 private:
 	int h;
@@ -183,33 +209,23 @@ private:
 class IColorFormat abstract
 {
 public:
-	virtual void ToRGBColorFormat(int& r, int& g, int& b) const = 0;
 	virtual void ToRGBColorFormat(RGBValue& val) const = 0;
-	virtual void ToHSLColorFormat(int& h, int& s, int& l) const = 0;
 	virtual void ToHSLColorFormat(HSLValue& val) const = 0;
 	virtual void ToHEXColorFormat(std::string& hex) const = 0;
+	virtual COLORREF ToCOLORREF() const = 0;
 };
-class RGBColorFormat : public IColorFormat, RGBValue
+class RGBColorFormat : public IColorFormat, public RGBValue
 {
 public:
 	RGBColorFormat() : RGBValue() {}
-	RGBColorFormat(const int& r, const int& g, const int& b) : RGBValue(r,g,b) {}
+	RGBColorFormat(const int& r, const int& g, const int& b) : RGBValue(r, g, b) {}
+	RGBColorFormat(const RGBValue& val) : RGBValue(val.GetR(), val.GetG(), val.GetB()) {}
 
-	void ToRGBColorFormat(int& r, int& g, int& b) const override
-	{
-		r = GetR();
-		g = GetG();
-		b = GetB();
-	}
 	void ToRGBColorFormat(RGBValue& val) const override
 	{
 		val.SetR(GetR());
 		val.SetG(GetG());
 		val.SetB(GetB());
-	}
-	void ToHSLColorFormat(int& h, int& s, int& l) const override
-	{
-
 	}
 	void ToHSLColorFormat(HSLValue& val) const override
 	{
@@ -219,15 +235,24 @@ public:
 	{
 
 	}
+	COLORREF ToCOLORREF() const override
+	{
+		return RGB(GetR(), GetG(), GetB());
+	}
 };
-class HSLColorFormat : public IColorFormat, HSLValue
+class HSLColorFormat : public IColorFormat, public HSLValue
 {
 public:
 	HSLColorFormat() : HSLValue() {}
 	HSLColorFormat(const int& h, const int& s, const int& l) : HSLValue(h, s, l) {}
+	HSLColorFormat(const HSLValue& val) : HSLValue(val.GetH(), val.GetS(), val.GetL()) {}
 
-	void ToRGBColorFormat(int& r, int& g, int& b) const override
+	void ToRGBColorFormat(RGBValue& val) const override
 	{
+		int r = 0;
+		int g = 0;
+		int b = 0;
+
 		float c = (1.0f - std::abs(2.0f * ((float)GetL() / 100.0f) - 1.0f)) * ((float)GetS() / 100.0f);
 		float x = c * (1.0f - (float)std::abs((GetH() / 60) % 2 - 1));
 		float m = ((float)GetL() / 100.0f) - ((float)c / 2.0f);
@@ -272,22 +297,10 @@ public:
 		r = (int)(((float)r + m) * 255.0f);
 		g = (int)(((float)g + m) * 255.0f);
 		b = (int)(((float)b + m) * 255.0f);
-	}
-	void ToRGBColorFormat(RGBValue& val) const override
-	{
-		int r = 0;
-		int g = 0;
-		int b = 0;
-		ToRGBColorFormat(r, g, b);
+
 		val.SetR(r);
 		val.SetG(g);
 		val.SetB(b);
-	}
-	void ToHSLColorFormat(int& h, int& s, int& l) const override
-	{
-		h = GetH();
-		s = GetS();
-		l = GetL();
 	}
 	void ToHSLColorFormat(HSLValue& val) const override
 	{
@@ -298,6 +311,12 @@ public:
 	void ToHEXColorFormat(std::string& hex) const override
 	{
 
+	}
+	COLORREF ToCOLORREF() const override
+	{
+		RGBValue val;
+		ToRGBColorFormat(val);
+		return RGB(val.GetR(), val.GetG(), val.GetB());
 	}
 };
 class HEXColorFormat : public IColorFormat
@@ -322,8 +341,12 @@ public:
 		}
 	}
 
-	void ToRGBColorFormat(int& r, int& g, int& b) const override
+	void ToRGBColorFormat(RGBValue& val) const override
 	{
+		int r = 0;
+		int g = 0;
+		int b = 0;
+
 		int num = 0;
 
 		if (hex[1] >= 'a' && hex[1] <= 'f') num = hex[1] - 87;
@@ -346,20 +369,10 @@ public:
 		if (hex[6] >= 'a' && hex[6] <= 'f') num = hex[6] - 87;
 		else num = atoi(&hex[6]);
 		b = b | num;
-	}
-	void ToRGBColorFormat(RGBValue& val) const override
-	{
-		int r = 0;
-		int g = 0;
-		int b = 0;
-		ToRGBColorFormat(r, g, b);
+
 		val.SetR(r);
 		val.SetG(g);
 		val.SetB(b);
-	}
-	void ToHSLColorFormat(int& h, int& s, int& l) const override
-	{
-
 	}
 	void ToHSLColorFormat(HSLValue& val) const override
 	{
@@ -368,6 +381,12 @@ public:
 	void ToHEXColorFormat(std::string& hex) const override
 	{
 		hex = this->hex;
+	}
+	COLORREF ToCOLORREF() const override
+	{
+		RGBValue val;
+		ToRGBColorFormat(val);
+		return RGB(val.GetR(), val.GetG(), val.GetB());
 	}
 
 private:
@@ -441,10 +460,50 @@ struct _PenStyle
 	const INT INSIDEFRAME = PS_INSIDEFRAME;
 } PenStyle;
 
+struct EventArgs
+{
+	void* engine;
+};
+
+using EventHandler = void(*)(void* sender, EventArgs* args);
+
+class Event
+{
+public:
+	Event() {}
+	Event(const Event& e) = delete;
+
+	void operator+=(EventHandler handler)
+	{
+		handlers.push_back(handler);
+	}
+	void operator-=(EventHandler handler)
+	{
+		handlers.remove(handler);
+	}
+	void operator()(void* sender, EventArgs* args)
+	{
+		for (EventHandler handler : handlers)
+		{
+			if (handler) handler(sender, args);
+		}
+	}
+
+private:
+	std::list<EventHandler> handlers;
+};
+
 class UIElement abstract
 {
 public:
-	UIElement() : x(0), y(0), width(10), height(10), isFocused(false), backgroundColor(Colors.GREY), foregroundColor(Colors.BLACK) {}
+	UIElement() : x(0), y(0), width(10), height(10), isMouseHover(false), backgroundColor(Colors.GREY), foregroundColor(Colors.BLACK) {}
+	UIElement(const int& x, const int& y, const int& width, const int& height) : isMouseHover(false), backgroundColor(Colors.GREY), foregroundColor(Colors.BLACK)
+	{
+		this->x = x;
+		this->y = y;
+		this->width = width;
+		this->height = height;
+	}
 
 	void SetX(const int& x)
 	{
@@ -465,6 +524,10 @@ public:
 	void SetText(const std::wstring& text)
 	{
 		this->text = text;
+	}
+	void SetMouseHover(const bool& isHover)
+	{
+		isMouseHover = isHover;
 	}
 
 	const int& GetX() const
@@ -496,40 +559,25 @@ public:
 		return text;
 	}
 
-	virtual void Draw(void* eng) const = 0;
+	virtual void UpdateElement(void* engine) = 0;
 
-	const bool& IsFocused() const
+	bool IsMouseHover() const
 	{
-		return isFocused;
-	}
-	void SetFocus()
-	{
-		isFocused = true;
-	}
-	void UnsetFocus()
-	{
-		isFocused = false;
+		return isMouseHover;
 	}
 
-	bool IsMouseHover(const float& mousex, const float& mousey) const
-	{
-		if (mousex <= x + width && mousex >= x)
-		{
-			if (mousey <= y + height && mousey >= y)
-			{
-				return true;
-			}
-		}
+public:
+	Event onMouseDown;
+	Event onMouseUp;
+	Event onMousePressed;
+	Event onMouseHover;
 
-		return false;
-	}
-
-private:
+protected:
 	int x;
 	int y;
 	int width;
 	int height;
-	bool isFocused;
+	bool isMouseHover;
 	std::wstring text;
 	RGBColorFormat backgroundColor;
 	RGBColorFormat foregroundColor;
@@ -595,10 +643,10 @@ public:
 		f_hMainWndDC = GetDC(f_hMainWnd);
 		f_hBufferDC = CreateCompatibleDC(f_hMainWndDC);
 		f_hBufferBitmap = CreateCompatibleBitmap(f_hMainWndDC, GetClientWidth(), GetClientHeight());
-		f_hCurrentBrush = CreateSolidBrush(ToCOLORREF(Colors.BLACK));
-		f_hCurrentPen = CreatePen(PenStyle.SOLID, 1, ToCOLORREF(Colors.BLACK));
-		f_cCurrentBrushColor = ToCOLORREF(Colors.BLACK);
-		f_cCurrentPenColor = ToCOLORREF(Colors.BLACK);
+		f_hCurrentBrush = CreateSolidBrush(Colors.BLACK.ToCOLORREF());
+		f_hCurrentPen = CreatePen(PenStyle.SOLID, 1, Colors.BLACK.ToCOLORREF());
+		f_cCurrentBrushColor = Colors.BLACK.ToCOLORREF();
+		f_cCurrentPenColor = Colors.BLACK.ToCOLORREF();
 		f_iCurrentPenWidth = 1;
 		f_iCurrentPenStyle = PenStyle.SOLID;
 		SelectObject(f_hBufferDC, f_hBufferBitmap);
@@ -625,18 +673,6 @@ public:
 		engine_thread.join();
 
 		Gdiplus::GdiplusShutdown(gdiplusToken);
-	}
-
-	VOID AddUIElement(UIElement& el)
-	{
-		f_vuiElements.push_back(&el);
-	}
-
-	COLORREF ToCOLORREF(const IColorFormat& format)
-	{
-		RGBValue val;
-		format.ToRGBColorFormat(val);
-		return RGB(val.GetR(), val.GetG(), val.GetB());
 	}
 
 	UINT GetClientWidth() const
@@ -676,37 +712,57 @@ public:
 		return &f_keys[keycode];
 	}
 
+	//UI methods
+	VOID AddUIElement(UIElement& el)
+	{
+		f_vuiElements.push_back(&el);
+	}
+
 	//SWEngine drawing methods
 	VOID DrawLine(const int& x1, const int& y1, const int& x2, const int& y2, const IColorFormat& color)
 	{
-		const int deltaX = abs(x2 - x1);
-		const int deltaY = abs(y2 - y1);
-		const int signX = x1 < x2 ? 1 : -1;
-		const int signY = y1 < y2 ? 1 : -1;
-		int error = deltaX - deltaY;
-
-		int r = 0;
-		int g = 0;
-		int b = 0;
-		color.ToRGBColorFormat(r, g, b);
-		DrawPixelWinAPI(x2, y2, ToCOLORREF(color));
-
+		int dx = std::abs(x2 - x1);
+		int dy = std::abs(y2 - y1);
 		int x = x1;
 		int y = y1;
-		while (x != x2 || y != y2)
-		{
-			DrawPixelWinAPI(x, y, ToCOLORREF(color));
+		int xend = x2;
+		int yend = y2;
 
-			const int error2 = error * 2;
-			if (error2 > -deltaY)
+		bool inv = false;
+
+		if (dx < dy)
+		{
+			inv = true;
+			std::swap(dx, dy);
+			std::swap(x, y);
+			std::swap(xend, yend);
+		}
+
+		if (x > xend)
+		{
+			std::swap(x,xend);
+			std::swap(y,yend);
+		}
+
+		int incy = y < yend ? 1 : -1;
+
+		int d = 2 * dy - dx;
+
+		DrawPixelWinAPI(inv ? yend : xend, inv ? xend : yend, color.ToCOLORREF());
+		while (x != xend || y != yend)
+		{
+			DrawPixelWinAPI(inv ? y : x, inv ? x : y, color.ToCOLORREF());
+
+			if (d >= 0)
 			{
-				error -= deltaY;
-				x += signX;
+				x++;
+				y += incy;
+				d += 2 * dy - 2 * dx;
 			}
-			if (error2 < deltaX)
+			else
 			{
-				error += deltaX;
-				y += signY;
+				x++;
+				d += 2 * dy;
 			}
 		}
 	}
@@ -746,6 +802,19 @@ public:
 		}
 	}
 
+	VOID FillRectangle(const int& x1, const int& y1, const int& x2, const int& y2, const IColorFormat& color)
+	{
+		int incy = y1 < y2 ? 1 : -1;
+		int y = y1;
+
+		DrawLine(x1, y2, x2, y2, color);
+		while (y != y2)
+		{
+			DrawLine(x1, y, x2, y, color);
+			y += incy;
+		}
+	}
+
 	VOID DrawCircle(const int& cx, const int& cy, const int& radius, const IColorFormat& color)
 	{
 		int x = 0;
@@ -755,10 +824,10 @@ public:
 
 		while (y >= 0)
 		{
-			DrawPixelWinAPI(cx + x, cy + y, ToCOLORREF(color));
-			DrawPixelWinAPI(cx + x, cy - y, ToCOLORREF(color));
-			DrawPixelWinAPI(cx - x, cy + y, ToCOLORREF(color));
-			DrawPixelWinAPI(cx - x, cy - y, ToCOLORREF(color));
+			DrawPixelWinAPI(cx + x, cy + y, color.ToCOLORREF());
+			DrawPixelWinAPI(cx + x, cy - y, color.ToCOLORREF());
+			DrawPixelWinAPI(cx - x, cy + y, color.ToCOLORREF());
+			DrawPixelWinAPI(cx - x, cy - y, color.ToCOLORREF());
 			error = 2 * (delta + y) - 1;
 			if (delta < 0 && error <= 0) {
 				++x;
@@ -1017,7 +1086,33 @@ private:
 
 			for (UIElement* el : f_vuiElements)
 			{
-				el->Draw(this);
+				bool isMouseHoverElement = false;
+
+				EventArgs args;
+				args.engine = this;
+
+				if (GetMouseX() <= el->GetX() + el->GetWidth() && GetMouseX() >= el->GetX())
+				{
+					if (GetMouseY() <= el->GetY() + el->GetHeight() && GetMouseY() >= el->GetY())
+					{
+						isMouseHoverElement = true;
+					}
+				}
+
+				if (isMouseHoverElement)
+				{
+					el->SetMouseHover(true);
+					el->onMouseHover(el, &args);
+					if (GetKeyInfo(KeyCode.MOUSELEFT)->KeyDown)
+					{
+						el->onMouseDown(el, &args);
+					}
+					else if (GetKeyInfo(KeyCode.MOUSELEFT)->KeyUp) el->onMouseUp(el, &args);
+					else if (GetKeyInfo(KeyCode.MOUSELEFT)->KeyPressed) el->onMousePressed(el, &args);
+				}
+				else if (el->IsMouseHover()) el->SetMouseHover(false);
+
+				el->UpdateElement(this);
 			}
 
 			//Copying from buffer to screen
@@ -1131,9 +1226,16 @@ private:
 
 class Button : public UIElement
 {
-	void Draw(void* eng) const override
+public:
+	Button(const int& x, const int& y, const int& width, const int& height) : UIElement(x, y, width, height) {}
+
+	void UpdateElement(void* engine) override
 	{
-		((Engine*)eng)->FillRectangleWinAPI(GetX(), GetY(), GetX() + GetWidth(), GetY() + GetHeight(), ((Engine*)eng)->ToCOLORREF(GetBackgroundColor()));
-		((Engine*)eng)->DrawStringWinAPI(GetText().c_str(), GetX(), GetY(), GetX() + GetWidth(), GetY() + GetHeight(), ((Engine*)eng)->ToCOLORREF(GetForegroundColor()));
+		if (IsMouseHover())
+		{
+			((Engine*)engine)->FillRectangleWinAPI(x, y, x + width, y + height, Colors.AQUA.ToCOLORREF());
+		}
+		else ((Engine*)engine)->FillRectangleWinAPI(x, y, x + width, y + height, backgroundColor.ToCOLORREF());
+		((Engine*)engine)->DrawStringWinAPI(text.c_str(), x, y, x + width, y + height, foregroundColor.ToCOLORREF());
 	}
 };

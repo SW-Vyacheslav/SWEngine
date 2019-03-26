@@ -2,17 +2,46 @@
 
 class Test : public Engine
 {
+public:
+	void OnCreate() override
+	{
+		ShowFps(true);
+	}
+
 	void OnUpdate(float dt) override
 	{
-		FillTriangle(450,500,500,300,550,500, HEXColorFormat("#ff3d3d"));
-		DrawCircle(200,200,50, HEXColorFormat("#ff3d3d"));
+		FillWindowWinAPI(Colors.WHITE.ToCOLORREF());
+
+		//1 stage +
+		DrawLine(200, 200, 250, 225, Colors.BLACK);
+		DrawLine(200, 200, 250, 175, Colors.BLACK);
+
+		//2 stage +
+		DrawLine(200, 200, 250, 275, Colors.BLACK);
+		DrawLine(200, 200, 250, 125, Colors.BLACK);
+
+		//3 stage -
+		DrawLine(200, 200, 150, 225, Colors.BLACK);
+		DrawLine(200, 200, 150, 175, Colors.BLACK);
+		DrawLine(200, 200, 150, 275, Colors.BLACK);
+		DrawLine(200, 200, 150, 125, Colors.BLACK);
+
+		DrawLine(200, 200, 250, 200, Colors.BLACK);
+		DrawLine(200, 200, 150, 200, Colors.BLACK);
+		DrawLine(200, 200, 200, 250, Colors.BLACK);
+		DrawLine(200, 200, 200, 150, Colors.BLACK);
+		
+		DrawLine(200, 200, 250, 250, Colors.BLACK);
+		DrawLine(200, 200, 150, 150, Colors.BLACK);
+		DrawLine(200, 200, 250, 150, Colors.BLACK);
+		DrawLine(200, 200, 150, 250, Colors.BLACK);
 	}
 };
 
 int main()
 {
 	Test eng;
-	eng.Start(1024,768);
+	eng.Start(1024, 768);
 
 	return 0;
 }
