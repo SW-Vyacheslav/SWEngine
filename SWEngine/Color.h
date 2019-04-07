@@ -2,6 +2,10 @@
 #include <Windows.h>
 #include <string>
 
+#include <objidl.h>
+#include <gdiplus.h>
+#pragma comment (lib,"Gdiplus.lib")
+
 namespace SWEngine
 {
 	namespace Color
@@ -12,10 +16,11 @@ namespace SWEngine
 			RGBValue();
 			RGBValue(const int& r, const int& g, const int& b);
 			RGBValue(const RGBValue& val);
+			~RGBValue();
 
-			const int& GetR() const;
-			const int& GetG() const;
-			const int& GetB() const;
+			int GetR() const;
+			int GetG() const;
+			int GetB() const;
 			void SetR(const int& r);
 			void SetG(const int& g);
 			void SetB(const int& b);
@@ -33,10 +38,11 @@ namespace SWEngine
 			HSLValue();
 			HSLValue(const int& h, const int& s, const int& l);
 			HSLValue(const HSLValue& val);
+			~HSLValue();
 
-			const int& GetH() const;
-			const int& GetS() const;
-			const int& GetL() const;
+			int GetH() const;
+			int GetS() const;
+			int GetL() const;
 			void SetH(const int& h);
 			void SetS(const int& s);
 			void SetL(const int& l);
@@ -63,6 +69,8 @@ namespace SWEngine
 			RGBColorFormat();
 			RGBColorFormat(const int& r, const int& g, const int& b);
 			RGBColorFormat(const RGBValue& val);
+			RGBColorFormat(const RGBColorFormat& format);
+			~RGBColorFormat();
 
 			void ToRGBColorFormat(RGBValue& val) const override;
 			void ToHSLColorFormat(HSLValue& val) const override;
@@ -75,6 +83,8 @@ namespace SWEngine
 			HSLColorFormat();
 			HSLColorFormat(const int& h, const int& s, const int& l);
 			HSLColorFormat(const HSLValue& val);
+			HSLColorFormat(const HSLColorFormat& format);
+			~HSLColorFormat();
 
 			void ToRGBColorFormat(RGBValue& val) const override;
 			void ToHSLColorFormat(HSLValue& val) const override;
@@ -86,6 +96,8 @@ namespace SWEngine
 		public:
 			HEXColorFormat();
 			HEXColorFormat(const std::string& hex);
+			HEXColorFormat(const HEXColorFormat& format);
+			~HEXColorFormat();
 
 			void ToRGBColorFormat(RGBValue& val) const override;
 			void ToHSLColorFormat(HSLValue& val) const override;
@@ -108,6 +120,30 @@ namespace SWEngine
 			static const RGBColorFormat MAGENTA;
 			static const RGBColorFormat AQUA;
 			static const RGBColorFormat GREY;
+		};
+
+		class Color
+		{
+		public:
+			Color();
+			Color(const Color& color);
+			~Color();
+
+			static Color FromRGB(const int& red, const int& green, const int& blue);
+			static Color FromHSL(const int& hue, const int& saturation, const int& lightness);
+			static Color FromHEX(const std::string& hex);
+
+			int GetAlpha();
+			int GetRed();
+			int GetGreen();
+			int GetBlue();
+
+			int GetHue();
+			int GetSaturation();
+			int GetLightness();
+
+		private:
+			unsigned long value;
 		};
 	}
 }

@@ -11,6 +11,7 @@ namespace SWEngine
 		public:
 			UIElement();
 			UIElement(const int& x, const int& y, const int& width, const int& height);
+			~UIElement();
 
 			void SetX(const int& x);
 			void SetY(const int& y);
@@ -19,13 +20,14 @@ namespace SWEngine
 			void SetText(const std::wstring& text);
 			void SetMouseHover(const bool& isHover);
 
-			const int& GetX() const;
-			const int& GetY() const;
-			const int& GetWidth() const;
-			const int& GetHeight() const;
-			const Color::RGBColorFormat& GetBackgroundColor() const;
-			const Color::RGBColorFormat& GetForegroundColor() const;
-			const std::wstring& GetText() const;
+			int GetX() const;
+			int GetY() const;
+			int GetWidth() const;
+			int GetHeight() const;
+			const Color::IColorFormat* GetBackgroundColor() const;
+			const Color::IColorFormat* GetForegroundColor() const;
+			const Color::IColorFormat* GetMouseHoverColor() const;
+			std::wstring GetText() const;
 
 			virtual void UpdateElement(void* engine) = 0;
 
@@ -44,8 +46,9 @@ namespace SWEngine
 			int height;
 			bool isMouseHover;
 			std::wstring text;
-			Color::RGBColorFormat backgroundColor;
-			Color::RGBColorFormat foregroundColor;
+			Color::IColorFormat* backgroundColor;
+			Color::IColorFormat* foregroundColor;
+			Color::IColorFormat* mouseHoverColor;
 		};
 
 		class Button : public UIElement

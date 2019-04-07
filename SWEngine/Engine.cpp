@@ -58,15 +58,9 @@ namespace SWEngine
 		f_hMainWndDC = GetDC(f_hMainWnd);
 		f_hBufferDC = CreateCompatibleDC(f_hMainWndDC);
 		f_hBufferBitmap = CreateCompatibleBitmap(f_hMainWndDC, GetClientWidth(), GetClientHeight());
-		f_hCurrentBrush = CreateSolidBrush(Color::Colors::BLACK.ToCOLORREF());
-		f_hCurrentPen = CreatePen(PenStyle::SOLID, 1, Color::Colors::BLACK.ToCOLORREF());
-		f_cCurrentBrushColor = Color::Colors::BLACK.ToCOLORREF();
-		f_cCurrentPenColor = Color::Colors::BLACK.ToCOLORREF();
-		f_iCurrentPenWidth = 1;
-		f_iCurrentPenStyle = PenStyle::SOLID;
-		SelectObject(f_hBufferDC, f_hBufferBitmap);
-		SelectObject(f_hBufferDC, f_hCurrentBrush);
-		SelectObject(f_hBufferDC, f_hCurrentPen);
+
+		HBITMAP hOldBufferBitmap = (HBITMAP)SelectObject(f_hBufferDC, f_hBufferBitmap);
+
 		SetStretchBltMode(f_hMainWndDC, COLORONCOLOR);
 		SetStretchBltMode(f_hBufferDC, COLORONCOLOR);
 
@@ -75,9 +69,9 @@ namespace SWEngine
 		UpdateWindow(f_hMainWnd);
 
 		f_bAtomActive = true;
+		std::thread engine_thread(&Engine::EngineLoop, this);
 
 		MSG msg;
-		std::thread engine_thread(&Engine::EngineLoop, this);
 
 		while (GetMessage(&msg, NULL, NULL, NULL))
 		{
@@ -129,10 +123,50 @@ namespace SWEngine
 	{
 		int dx = std::abs(x2 - x1);
 		int dy = std::abs(y2 - y1);
+
 		int x = x1;
 		int y = y1;
 		int xend = x2;
 		int yend = y2;
+
+		if (dx == dy)
+		{
+			int incy = y < yend ? 1 : -1;
+			int incx = x < xend ? 1 : -1;
+
+			DrawPixelWinAPI(x, y, color.ToCOLORREF());
+			while (x != xend || y != yend)
+			{
+				x += incx;
+				y += incy;
+				DrawPixelWinAPI(x, y, color.ToCOLORREF());
+			}
+			return;
+		}
+		else if (dx == 0)
+		{
+			int incy = y < yend ? 1 : -1;
+
+			DrawPixelWinAPI(x, y, color.ToCOLORREF());
+			while (y != yend)
+			{
+				y += incy;
+				DrawPixelWinAPI(x, y, color.ToCOLORREF());
+			}
+			return;
+		}
+		else if (dy == 0)
+		{
+			int incx = x < xend ? 1 : -1;
+
+			DrawPixelWinAPI(x, y, color.ToCOLORREF());
+			while (x != xend)
+			{
+				x += incx;
+				DrawPixelWinAPI(x, y, color.ToCOLORREF());
+			}
+			return;
+		}
 
 		bool inv = false;
 
@@ -161,15 +195,12 @@ namespace SWEngine
 
 			if (d >= 0)
 			{
-				x++;
 				y += incy;
-				d += 2 * dy - 2 * dx;
+				d -= 2 * dx;
 			}
-			else
-			{
-				x++;
-				d += 2 * dy;
-			}
+
+			d += 2 * dy;
+			x++;
 		}
 	}
 	VOID Engine::DrawTriangle(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const Color::IColorFormat& color)
@@ -180,30 +211,7 @@ namespace SWEngine
 	}
 	VOID Engine::FillTriangle(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const Color::IColorFormat& color)
 	{
-		int miny = min(y1, min(y2, y3));
-		int maxy = max(y1, max(y2, y3));
-		int minx = min(x1, min(x2, x3));
-		int maxx = max(x1, max(x2, x3));
-
-		ScanLine scanline = { minx,miny,maxx,miny };
-
-		ScanLine AB = { x1,y1,x2,y2 };
-		ScanLine BC = { x2,y2,x3,y3 };
-		ScanLine AC = { x1,y1,x3,y3 };
-
-		POINT crosspoint1;
-		POINT crosspoint2;
-
-		for (int y = miny; y <= maxy; y += 1)
-		{
-			scanline.GetCrossPoint(AB, crosspoint1);
-			scanline.GetCrossPoint(BC, crosspoint2);
-
-			DrawLine(crosspoint1.x, crosspoint1.y, crosspoint2.x, crosspoint2.y, color);
-
-			scanline.SetY1(y + 1);
-			scanline.SetY2(y + 1);
-		}
+		
 	}
 	VOID Engine::FillRectangle(const int& x1, const int& y1, const int& x2, const int& y2, const Color::IColorFormat& color)
 	{
@@ -250,12 +258,17 @@ namespace SWEngine
 	//WinAPI drawing methods
 	VOID Engine::FillCircleWinAPI(const int& cx, const int& cy, const int& radius, const COLORREF& color)
 	{
-		SetCurrentPenStyle(PenStyle::SOLID);
-		SetCurrentPenColor(color);
-		SetCurrentPenWidth(1);
-		SetCurrentBrushColor(color);
+		HPEN hNewPen = CreatePen(PenStyle::SOLID, 1, color);
+		HPEN hOldPen = (HPEN)SelectObject(f_hBufferDC, hNewPen);
+		HBRUSH hNewBrush = CreateSolidBrush(color);
+		HBRUSH hOldBrush = (HBRUSH)SelectObject(f_hBufferDC, hNewBrush);
 
 		Ellipse(f_hBufferDC, cx - radius, cy - radius, cx + radius, cy + radius);
+
+		SelectObject(f_hBufferDC, hOldPen);
+		SelectObject(f_hBufferDC, hOldBrush);
+		DeleteObject(hNewPen);
+		DeleteObject(hOldBrush);
 	}
 	VOID Engine::DrawPixelWinAPI(const int& x, const int& y, const COLORREF& color)
 	{
@@ -263,12 +276,14 @@ namespace SWEngine
 	}
 	VOID Engine::DrawLineWinAPI(const int& x1, const int& y1, const int& x2, const int& y2, const COLORREF& color, const UINT& width, const INT& pen_style)
 	{
-		SetCurrentPenColor(color);
-		SetCurrentPenWidth(width);
-		SetCurrentPenStyle(pen_style);
+		HPEN hNewPen = CreatePen(pen_style, width, color);
+		HPEN hOldPen = (HPEN)SelectObject(f_hBufferDC, hNewPen);
 
 		MoveToEx(f_hBufferDC, x1, y1, NULL);
 		LineTo(f_hBufferDC, x2, y2);
+
+		SelectObject(f_hBufferDC, hOldPen);
+		DeleteObject(hNewPen);
 	}
 	VOID Engine::DrawTriangleWinAPI(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const COLORREF& color, const UINT& border_width, const INT& pen_style)
 	{
@@ -281,9 +296,13 @@ namespace SWEngine
 		RECT textRect = { x1,y1,x2,y2 };
 		int prevmode = SetBkMode(f_hBufferDC, TRANSPARENT);
 		COLORREF prevcolor = SetTextColor(f_hBufferDC, textcolor);
+		HFONT newfont = CreateFont(0, 0, 0, 0, 0, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, ((FF_DONTCARE << 4) & DEFAULT_PITCH), L"Roboto");
+		HFONT oldfont = (HFONT)SelectObject(f_hBufferDC, newfont);
 		DrawText(f_hBufferDC, str, lstrlenW(str), &textRect, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
 		SetBkMode(f_hBufferDC, prevmode);
 		SetTextColor(f_hBufferDC, prevcolor);
+		SelectObject(f_hBufferDC, oldfont);
+		DeleteObject(newfont);
 	}
 	VOID Engine::DrawImageWinAPI(const HBITMAP& bitmap, const int& x1, const int& y1, const UINT& width, const UINT& height)
 	{
@@ -291,16 +310,16 @@ namespace SWEngine
 		SelectObject(hDC, bitmap);
 		BITMAP bm;
 		GetObject(bitmap, sizeof(bm), &bm);
-		if (width != 0 && height != 0) StretchBlt(f_hBufferDC, x1, y1, width, height, hDC, 0, 0, bm.bmWidth, bm.bmHeight, SRCCOPY);
+		if (width > 0 && height > 0) StretchBlt(f_hBufferDC, x1, y1, width, height, hDC, 0, 0, bm.bmWidth, bm.bmHeight, SRCCOPY);
 		else StretchBlt(f_hBufferDC, x1, y1, bm.bmWidth, bm.bmHeight, hDC, 0, 0, bm.bmWidth, bm.bmHeight, SRCCOPY);
 		DeleteDC(hDC);
 	}
 	VOID Engine::FillTriangleWinAPI(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const COLORREF& color)
 	{
-		SetCurrentBrushColor(color);
-		SetCurrentPenStyle(PenStyle::SOLID);
-		SetCurrentPenColor(color);
-		SetCurrentPenWidth(1);
+		HPEN hNewPen = CreatePen(PenStyle::SOLID, 1, color);
+		HPEN hOldPen = (HPEN)SelectObject(f_hBufferDC, hNewPen);
+		HBRUSH hNewBrush = CreateSolidBrush(color);
+		HBRUSH hOldBrush = (HBRUSH)SelectObject(f_hBufferDC, hNewBrush);
 
 		POINT p[3];
 		p[0].x = x1;
@@ -310,23 +329,29 @@ namespace SWEngine
 		p[2].x = x3;
 		p[2].y = y3;
 		Polygon(f_hBufferDC, p, 3);
+
+		SelectObject(f_hBufferDC, hOldPen);
+		SelectObject(f_hBufferDC, hOldBrush);
+		DeleteObject(hNewPen);
+		DeleteObject(hOldBrush);
 	}
 	VOID Engine::FillRectangleWinAPI(const int& x1, const int& y1, const int& x2, const int& y2, const COLORREF& color)
 	{
-		SetCurrentBrushColor(color);
-		SetCurrentPenColor(color);
-		SetCurrentPenWidth(1);
-		SetCurrentPenStyle(PenStyle::SOLID);
+		HPEN hNewPen = CreatePen(PenStyle::SOLID, 1, color);
+		HPEN hOldPen = (HPEN)SelectObject(f_hBufferDC, hNewPen);
+		HBRUSH hNewBrush = CreateSolidBrush(color);
+		HBRUSH hOldBrush = (HBRUSH)SelectObject(f_hBufferDC, hNewBrush);
 
 		Rectangle(f_hBufferDC, x1, y1, x2, y2);
+
+		SelectObject(f_hBufferDC, hOldPen);
+		SelectObject(f_hBufferDC, hOldBrush);
+		DeleteObject(hNewPen);
+		DeleteObject(hOldBrush);
 	}
 	VOID Engine::FillWindowWinAPI(const COLORREF& color)
 	{
-		SetCurrentBrushColor(color);
-		SetCurrentPenStyle(PenStyle::SOLID);
-		SetCurrentPenColor(color);
-
-		Rectangle(f_hBufferDC, 0, 0, GetClientWidth(), GetClientHeight());
+		FillRectangleWinAPI(0, 0, GetClientWidth(), GetClientHeight(), color);
 	}
 	VOID Engine::FillWindowWinAPI(const HBITMAP& bitmap)
 	{
@@ -392,13 +417,11 @@ namespace SWEngine
 
 				DeleteObject(f_hBufferBitmap);
 				DeleteObject(f_hBufferDC);
-				DeleteObject(f_hCurrentBrush);
-				DeleteObject(f_hCurrentPen);
 				ReleaseDC(f_hMainWnd, f_hMainWndDC);
+
 				PostQuitMessage(0);
 			}
 			else DefWindowProc(hWnd, msg, wParam, lParam);
-
 			break;
 		}
 
@@ -525,68 +548,6 @@ namespace SWEngine
 
 		f_cvEngineLoopFinished.notify_one();
 	}
-	VOID Engine::SetCurrentBrushColor(const COLORREF& color)
-	{
-		if (f_cCurrentBrushColor != color)
-		{
-			if (f_hCurrentBrush) DeleteObject(f_hCurrentBrush);
-			f_hCurrentBrush = CreateSolidBrush(color);
-			f_cCurrentBrushColor = color;
-			SelectObject(f_hBufferDC, f_hCurrentBrush);
-		}
-	}
-	VOID Engine::SetCurrentPenColor(const COLORREF& color)
-	{
-		if (f_cCurrentPenColor != color)
-		{
-			if (f_hCurrentPen) DeleteObject(f_hCurrentPen);
-			f_hCurrentPen = CreatePen(PS_SOLID, f_iCurrentPenWidth, color);
-			f_cCurrentPenColor = color;
-			SelectObject(f_hBufferDC, f_hCurrentPen);
-		}
-	}
-	VOID Engine::SetCurrentPenWidth(const INT& width)
-	{
-		if (f_iCurrentPenWidth != width)
-		{
-			if (f_hCurrentPen) DeleteObject(f_hCurrentPen);
-			f_hCurrentPen = CreatePen(PS_SOLID, width, f_cCurrentPenColor);
-			f_iCurrentPenWidth = width;
-			SelectObject(f_hBufferDC, f_hCurrentPen);
-		}
-	}
-	VOID Engine::SetCurrentPenStyle(const INT& style)
-	{
-		if (f_iCurrentPenStyle != style)
-		{
-			if (f_hCurrentPen) DeleteObject(f_hCurrentPen);
-			f_hCurrentPen = CreatePen(style, f_iCurrentPenWidth, f_cCurrentPenColor);
-			f_iCurrentPenStyle = style;
-			SelectObject(f_hBufferDC, f_hCurrentPen);
-		}
-	}
 
 	KeyInfo::KeyInfo() : KeyDown(false), KeyUp(false), KeyPressed(false) {}
-
-	ScanLine::ScanLine() : x1(0), y1(0), x2(0), y2(0) {}
-	ScanLine::ScanLine(const int& x1, const int& y1, const int& x2, const int& y2) : x1(x1), y1(y1), x2(x2), y2(y2) {}
-	void ScanLine::SetY1(const int& y1)
-	{
-		this->y1 = y1;
-	}
-	void ScanLine::SetY2(const int& y2)
-	{
-		this->y2 = y2;
-	}
-	bool ScanLine::GetCrossPoint(const ScanLine& line, POINT& outpoint)
-	{
-		int znam = (x1 - x2)*(line.y1 - line.y2) - (y1 - y2)*(line.x1 - line.x2);
-
-		if (znam == 0) return false;
-
-		outpoint.x = ((x1*y2 - y1 * x2)*(line.x1 - line.x2) - (x1 - x2)*(line.x1*line.y2 - line.y1*line.x2)) / znam;
-		outpoint.y = ((x1*y2 - y1 * x2)*(line.y1 - line.y2) - (y1 - y2)*(line.x1*line.y2 - line.y1*line.x2)) / znam;
-
-		return true;
-	}
 }

@@ -26,15 +26,16 @@ namespace SWEngine
 			this->g = val.g;
 			this->b = val.b;
 		}
-		const int& RGBValue::GetR() const
+		RGBValue::~RGBValue() {}
+		int RGBValue::GetR() const
 		{
 			return r;
 		}
-		const int& RGBValue::GetG() const
+		int RGBValue::GetG() const
 		{
 			return g;
 		}
-		const int& RGBValue::GetB() const
+		int RGBValue::GetB() const
 		{
 			return b;
 		}
@@ -88,15 +89,16 @@ namespace SWEngine
 			this->s = val.s;
 			this->l = val.l;
 		}
-		const int& HSLValue::GetH() const
+		HSLValue::~HSLValue() {}
+		int HSLValue::GetH() const
 		{
 			return h;
 		}
-		const int& HSLValue::GetS() const
+		int HSLValue::GetS() const
 		{
 			return s;
 		}
-		const int& HSLValue::GetL() const
+		int HSLValue::GetL() const
 		{
 			return l;
 		}
@@ -131,6 +133,13 @@ namespace SWEngine
 		RGBColorFormat::RGBColorFormat() : RGBValue() {}
 		RGBColorFormat::RGBColorFormat(const int& r, const int& g, const int& b) : RGBValue(r, g, b) {}
 		RGBColorFormat::RGBColorFormat(const RGBValue& val) : RGBValue(val.GetR(), val.GetG(), val.GetB()) {}
+		RGBColorFormat::RGBColorFormat(const RGBColorFormat & format)
+		{
+			this->SetR(format.GetR());
+			this->SetG(format.GetG());
+			this->SetB(format.GetB());
+		}
+		RGBColorFormat::~RGBColorFormat() {}
 		void RGBColorFormat::ToRGBColorFormat(RGBValue& val) const
 		{
 			val.SetR(GetR());
@@ -153,6 +162,13 @@ namespace SWEngine
 		HSLColorFormat::HSLColorFormat() : HSLValue() {}
 		HSLColorFormat::HSLColorFormat(const int& h, const int& s, const int& l) : HSLValue(h, s, l) {}
 		HSLColorFormat::HSLColorFormat(const HSLValue& val) : HSLValue(val.GetH(), val.GetS(), val.GetL()) {}
+		HSLColorFormat::HSLColorFormat(const HSLColorFormat & format)
+		{
+			this->SetH(format.GetH());
+			this->SetS(format.GetS());
+			this->SetL(format.GetL());
+		}
+		HSLColorFormat::~HSLColorFormat() {}
 		void HSLColorFormat::ToRGBColorFormat(RGBValue& val) const
 		{
 			int r = 0;
@@ -242,7 +258,13 @@ namespace SWEngine
 					}
 				}
 			}
+			else this->hex = "#000000";
 		}
+		HEXColorFormat::HEXColorFormat(const HEXColorFormat & format)
+		{
+			this->hex = format.hex;
+		}
+		HEXColorFormat::~HEXColorFormat() {}
 		void HEXColorFormat::ToRGBColorFormat(RGBValue& val) const
 		{
 			int r = 0;
@@ -291,8 +313,7 @@ namespace SWEngine
 			return RGB(val.GetR(), val.GetG(), val.GetB());
 		}
 
-		
-		const RGBColorFormat Colors::RED = { 255,0,0 };
+		const RGBColorFormat Colors::RED = { 255, 0, 0 };
 		const RGBColorFormat Colors::GREEN = { 0, 255, 0 };
 		const RGBColorFormat Colors::BLUE = { 0, 0, 255 };
 		const RGBColorFormat Colors::BLACK = { 0, 0, 0 };

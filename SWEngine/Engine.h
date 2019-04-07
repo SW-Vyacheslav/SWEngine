@@ -88,24 +88,6 @@ namespace SWEngine
 		bool KeyPressed;
 	};
 
-	class ScanLine
-	{
-	public:
-		ScanLine();
-		ScanLine(const int& x1, const int& y1, const int& x2, const int& y2);
-
-		void SetY1(const int& y1);
-		void SetY2(const int& y2);
-
-		bool GetCrossPoint(const ScanLine& line, POINT& outpoint);
-
-	private:
-		int x1;
-		int y1;
-		int x2;
-		int y2;
-	};
-
 	class Engine
 	{
 	public:
@@ -152,10 +134,6 @@ namespace SWEngine
 		static LRESULT CALLBACK StaticMainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 		LRESULT MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 		VOID EngineLoop();
-		VOID SetCurrentBrushColor(const COLORREF& color);
-		VOID SetCurrentPenColor(const COLORREF& color);
-		VOID SetCurrentPenWidth(const INT& width);
-		VOID SetCurrentPenStyle(const INT& style);
 
 	private:
 		HINSTANCE f_hInstance;
@@ -163,14 +141,6 @@ namespace SWEngine
 		HDC f_hMainWndDC;
 		HDC f_hBufferDC;
 		HBITMAP f_hBufferBitmap;
-
-		HBRUSH f_hCurrentBrush;
-		COLORREF f_cCurrentBrushColor;
-
-		HPEN f_hCurrentPen;
-		COLORREF f_cCurrentPenColor;
-		INT f_iCurrentPenWidth;
-		INT f_iCurrentPenStyle;
 
 		UINT f_uiClientWidth;
 		UINT f_uiClientHeight;

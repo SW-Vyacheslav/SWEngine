@@ -5,13 +5,27 @@ namespace SWEngine
 {
 	namespace GUI
 	{
-		UIElement::UIElement() : x(0), y(0), width(10), height(10), isMouseHover(false), backgroundColor(Color::Colors::GREY), foregroundColor(Color::Colors::BLACK) {}
-		UIElement::UIElement(const int& x, const int& y, const int& width, const int& height) : isMouseHover(false), backgroundColor(Color::Colors::GREY), foregroundColor(Color::Colors::BLACK)
+		UIElement::UIElement() : x(0), y(0), width(10), height(10), isMouseHover(false)
+		{
+			backgroundColor = new Color::HEXColorFormat("#cfd8dc");
+			foregroundColor = new Color::RGBColorFormat(Color::Colors::BLACK);
+			mouseHoverColor = new Color::HEXColorFormat("#9ea7aa");
+		}
+		UIElement::UIElement(const int& x, const int& y, const int& width, const int& height) : isMouseHover(false)
 		{
 			this->x = x;
 			this->y = y;
 			this->width = width;
 			this->height = height;
+			backgroundColor = new Color::HEXColorFormat("#cfd8dc");
+			foregroundColor = new Color::RGBColorFormat(Color::Colors::BLACK);
+			mouseHoverColor = new Color::HEXColorFormat("#9ea7aa");
+		}
+		UIElement::~UIElement()
+		{
+			delete backgroundColor;
+			delete foregroundColor;
+			delete mouseHoverColor;
 		}
 		void UIElement::SetX(const int& x)
 		{
@@ -37,31 +51,35 @@ namespace SWEngine
 		{
 			isMouseHover = isHover;
 		}
-		const int& UIElement::GetX() const
+		int UIElement::GetX() const
 		{
 			return x;
 		}
-		const int& UIElement::GetY() const
+		int UIElement::GetY() const
 		{
 			return y;
 		}
-		const int& UIElement::GetWidth() const
+		int UIElement::GetWidth() const
 		{
 			return width;
 		}
-		const int& UIElement::GetHeight() const
+		int UIElement::GetHeight() const
 		{
 			return height;
 		}
-		const Color::RGBColorFormat& UIElement::GetBackgroundColor() const
+		const Color::IColorFormat* UIElement::GetBackgroundColor() const
 		{
 			return backgroundColor;
 		}
-		const Color::RGBColorFormat& UIElement::GetForegroundColor() const
+		const Color::IColorFormat* UIElement::GetForegroundColor() const
 		{
 			return foregroundColor;
 		}
-		const std::wstring& UIElement::GetText() const
+		const Color::IColorFormat* UIElement::GetMouseHoverColor() const
+		{
+			return mouseHoverColor;
+		}
+		std::wstring UIElement::GetText() const
 		{
 			return text;
 		}
@@ -75,10 +93,10 @@ namespace SWEngine
 		{
 			if (IsMouseHover())
 			{
-				((Engine*)engine)->FillRectangleWinAPI(x, y, x + width, y + height, Color::Colors::AQUA.ToCOLORREF());
+				((Engine*)engine)->FillRectangleWinAPI(x, y, x + width, y + height, mouseHoverColor->ToCOLORREF());
 			}
-			else ((Engine*)engine)->FillRectangleWinAPI(x, y, x + width, y + height, backgroundColor.ToCOLORREF());
-			((Engine*)engine)->DrawStringWinAPI(text.c_str(), x, y, x + width, y + height, foregroundColor.ToCOLORREF());
+			else ((Engine*)engine)->FillRectangleWinAPI(x, y, x + width, y + height, backgroundColor->ToCOLORREF());
+			((Engine*)engine)->DrawStringWinAPI(text.c_str(), x, y, x + width, y + height, foregroundColor->ToCOLORREF());
 		}
 	}
 }
