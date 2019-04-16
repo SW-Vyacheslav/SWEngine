@@ -15,36 +15,78 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Engine.h">
+    <ClInclude Include="engine\include\drawing\Color.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Events.h">
+    <ClInclude Include="engine\include\gui\Button.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GUI.h">
+    <ClInclude Include="engine\include\gui\UIElement.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Color.h">
+    <ClInclude Include="engine\include\math\Converter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Mathematics.h">
+    <ClInclude Include="engine\include\math\Matrix3x3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="engine\include\math\Transform2D.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="engine\include\math\Vector2D.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="engine\include\Engine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="engine\include\Event.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="engine\include\KeyCode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="engine\include\KeyInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="engine\include\EventArgs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Engine.cpp">
+    <ClCompile Include="engine\src\drawing\Color.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Events.cpp">
+    <ClCompile Include="engine\src\gui\Button.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GUI.cpp">
+    <ClCompile Include="engine\src\gui\UIElement.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Color.cpp">
+    <ClCompile Include="engine\src\math\Converter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Mathematics.cpp">
+    <ClCompile Include="engine\src\math\Matrix3x3.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="engine\src\math\Transform2D.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="engine\src\math\Vector2D.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="engine\src\Engine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="engine\src\Event.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="engine\src\KeyCode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="engine\src\KeyInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="engine\src\EventArgs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

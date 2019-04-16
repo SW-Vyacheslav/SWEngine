@@ -1,6 +1,7 @@
 #pragma once
-#include "Events.h"
-#include "Color.h"
+#include "../Event.h"
+#include "../drawing/Color.h"
+#include <string.h>
 
 namespace SWEngine
 {
@@ -24,9 +25,9 @@ namespace SWEngine
 			int GetY() const;
 			int GetWidth() const;
 			int GetHeight() const;
-			const Color::IColorFormat* GetBackgroundColor() const;
-			const Color::IColorFormat* GetForegroundColor() const;
-			const Color::IColorFormat* GetMouseHoverColor() const;
+			const Drawing::Color GetBackgroundColor() const;
+			const Drawing::Color GetForegroundColor() const;
+			const Drawing::Color GetMouseHoverColor() const;
 			std::wstring GetText() const;
 
 			virtual void UpdateElement(void* engine) = 0;
@@ -34,10 +35,10 @@ namespace SWEngine
 			bool IsMouseHover() const;
 
 		public:
-			Events::Event onMouseDown;
-			Events::Event onMouseUp;
-			Events::Event onMousePressed;
-			Events::Event onMouseHover;
+			Event onMouseDown;
+			Event onMouseUp;
+			Event onMousePressed;
+			Event onMouseHover;
 
 		protected:
 			int x;
@@ -46,17 +47,9 @@ namespace SWEngine
 			int height;
 			bool isMouseHover;
 			std::wstring text;
-			Color::IColorFormat* backgroundColor;
-			Color::IColorFormat* foregroundColor;
-			Color::IColorFormat* mouseHoverColor;
-		};
-
-		class Button : public UIElement
-		{
-		public:
-			Button(const int& x, const int& y, const int& width, const int& height);
-
-			void UpdateElement(void* engine) override;
+			Drawing::Color backgroundColor;
+			Drawing::Color foregroundColor;
+			Drawing::Color mouseHoverColor;
 		};
 	}
 }
