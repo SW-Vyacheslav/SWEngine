@@ -1,7 +1,7 @@
 #include "../../include/gui/Button.h"
 #include "../../include/Engine.h"
 
-namespace SWEngine
+namespace SWE
 {
 	namespace GUI
 	{

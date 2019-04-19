@@ -1,13 +1,17 @@
-#pragma once
+#ifndef SWE_UIELEMENT
+#define SWE_UIELEMENT
+
 #include "../Event.h"
 #include "../drawing/Color.h"
 #include <string.h>
 
-namespace SWEngine
+#include "../Export.h"
+
+namespace SWE
 {
 	namespace GUI
 	{
-		class UIElement abstract
+		class SWE_API UIElement abstract
 		{
 		public:
 			UIElement();
@@ -53,3 +57,5 @@ namespace SWEngine
 		};
 	}
 }
+
+#endif

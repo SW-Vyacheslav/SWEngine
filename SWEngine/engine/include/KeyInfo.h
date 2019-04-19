@@ -1,8 +1,11 @@
-#pragma once
+#ifndef SWE_KEYINFO
+#define SWE_KEYINFO
 
-namespace SWEngine
+#include "Export.h"
+
+namespace SWE
 {
-	class KeyInfo
+	class SWE_API KeyInfo
 	{
 	public:
 		KeyInfo();
@@ -13,3 +16,5 @@ namespace SWEngine
 		bool KeyPressed;
 	};
 }
+
+#endif

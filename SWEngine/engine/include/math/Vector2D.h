@@ -1,11 +1,15 @@
-#pragma once
+#ifndef SWE_VECTOR2D
+#define SWE_VECTOR2D
+
 #include "Matrix3x3.h"
 
-namespace SWEngine
+#include "../Export.h"
+
+namespace SWE
 {
 	namespace Math
 	{
-		class Vector2D
+		class SWE_API Vector2D
 		{
 		public:
 			Vector2D();
@@ -35,3 +39,5 @@ namespace SWEngine
 		};
 	}
 }
+
+#endif

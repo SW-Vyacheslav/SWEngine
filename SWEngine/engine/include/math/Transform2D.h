@@ -1,11 +1,15 @@
-#pragma once
+#ifndef SWE_TRANSFORM2D
+#define SWE_TRANSFORM2D
+
 #include "Vector2D.h"
 
-namespace SWEngine
+#include "../Export.h"
+
+namespace SWE
 {
 	namespace Math
 	{
-		class Transform2D
+		class SWE_API Transform2D
 		{
 		public:
 			Transform2D();
@@ -20,3 +24,5 @@ namespace SWEngine
 		};
 	}
 }
+
+#endif

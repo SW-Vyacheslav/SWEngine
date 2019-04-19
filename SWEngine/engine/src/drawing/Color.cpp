@@ -1,6 +1,6 @@
 #include "../../include/drawing/Color.h"
 
-namespace SWEngine
+namespace SWE
 {
 	namespace Drawing
 	{
@@ -33,7 +33,7 @@ namespace SWEngine
 
 			if (hex[0] == '#')
 			{
-				for (int i = 1; i < hex.size(); i++)
+				for (int i = 1; i < (int)hex.size(); i++)
 				{
 					if ((hex[i] >= '0' && hex[i] <= '9') || (hex[i] >= 'a' && hex[i] <= 'f')) continue;
 					else return ret_val;

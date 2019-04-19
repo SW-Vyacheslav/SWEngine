@@ -1,8 +1,11 @@
-#pragma once
+#ifndef SWE_KEYCODE
+#define SWE_KEYCODE
 
-namespace SWEngine
+#include "Export.h"
+
+namespace SWE
 {
-	class KeyCode
+	class SWE_API KeyCode
 	{
 	public:
 		KeyCode();
@@ -51,3 +54,5 @@ namespace SWEngine
 		static const unsigned char DOWNARROW;
 	};
 }
+
+#endif

@@ -1,6 +1,6 @@
 #include "../../include/math/Matrix3x3.h"
 
-namespace SWEngine
+namespace SWE
 {
 	namespace Math
 	{

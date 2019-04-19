@@ -1,12 +1,16 @@
-#pragma once
+#ifndef SWE_EVENT
+#define SWE_EVENT
+
 #include "EventArgs.h"
 #include <list>
 
-namespace SWEngine
-{
-	typedef void(*EventHandler)(void* sender, EventArgs* args);
+#include "Export.h"
 
-	class Event
+namespace SWE
+{
+	SWE_API typedef void(*EventHandler)(void* sender, EventArgs* args);
+
+	class SWE_API Event
 	{
 	public:
 		Event();
@@ -22,3 +26,5 @@ namespace SWEngine
 		std::list<EventHandler> handlers;
 	};
 }
+
+#endif

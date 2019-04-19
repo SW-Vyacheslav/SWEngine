@@ -1,7 +1,7 @@
 #include "../../include/gui/UIElement.h"
 #include "../../include/drawing/Color.h"
 
-namespace SWEngine
+namespace SWE
 {
 	namespace GUI
 	{

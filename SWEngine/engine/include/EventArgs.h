@@ -1,8 +1,11 @@
-#pragma once
+#ifndef SWE_EVENTARGS
+#define SWE_EVENTARGS
 
-namespace SWEngine
+#include "Export.h"
+
+namespace SWE
 {
-	class EventArgs
+	class SWE_API EventArgs
 	{
 	public:
 		EventArgs();
@@ -11,3 +14,5 @@ namespace SWEngine
 		void* engine;
 	};
 }
+
+#endif

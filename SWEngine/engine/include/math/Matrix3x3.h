@@ -1,10 +1,13 @@
-#pragma once
+#ifndef SWE_MATRIX3X3
+#define SWE_MATRIX3X3
 
-namespace SWEngine
+#include "../Export.h"
+
+namespace SWE
 {
 	namespace Math
 	{
-		class Matrix3x3
+		class SWE_API Matrix3x3
 		{
 		public:
 			Matrix3x3();
@@ -21,3 +24,5 @@ namespace SWEngine
 		};
 	}
 }
+
+#endif

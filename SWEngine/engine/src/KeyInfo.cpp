@@ -1,6 +1,6 @@
 #include "../include/KeyInfo.h"
 
-namespace SWEngine
+namespace SWE
 {
 	KeyInfo::KeyInfo() : KeyDown(false), KeyUp(false), KeyPressed(false) {}
 	KeyInfo::~KeyInfo() {}

@@ -1,6 +1,6 @@
 #include "../include/Event.h"
 
-namespace SWEngine
+namespace SWE
 {
 	Event::Event() {}
 	Event::~Event() {}

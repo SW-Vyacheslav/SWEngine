@@ -1,8 +1,7 @@
-#pragma once
+#ifndef SWE_ENGINE
+#define SWE_ENGINE
 
-#ifndef UNICODE
-#error UNICODE is not enabled for your compiler!
-#endif
+#include "Export.h"
 
 #include <Windows.h>
 #include <chrono>
@@ -20,9 +19,9 @@
 #include "drawing/Color.h"
 #include "KeyInfo.h"
 
-namespace SWEngine
+namespace SWE
 {
-	class Engine
+	class SWE_API Engine
 	{
 	public:
 		Engine();
@@ -101,3 +100,5 @@ namespace SWEngine
 		bool f_bShowFps;
 	};
 }
+
+#endif

@@ -1,7 +1,7 @@
 #include "../include/Engine.h"
 #include "../include/KeyCode.h"
 
-namespace SWEngine
+namespace SWE
 {
 	Engine::Engine() : f_bShowFps(false), f_bAtomActive(false) {}
 	Engine::~Engine() {}

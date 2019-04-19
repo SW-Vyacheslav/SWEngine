@@ -51,6 +51,12 @@
     <ClInclude Include="engine\include\EventArgs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="engine\include\Config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="engine\include\Export.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="engine\src\drawing\Color.cpp">

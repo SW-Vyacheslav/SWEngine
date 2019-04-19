@@ -1,6 +1,6 @@
 #include "../include/EventArgs.h"
 
-namespace SWEngine
+namespace SWE
 {
 	EventArgs::EventArgs(){}
 	EventArgs::~EventArgs(){}

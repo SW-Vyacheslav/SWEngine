@@ -1,11 +1,15 @@
-#pragma once
+#ifndef SWE_COLOR
+#define SWE_COLOR
+
 #include <string>
 
-namespace SWEngine
+#include "../Export.h"
+
+namespace SWE
 {
 	namespace Drawing
 	{
-		class Color
+		class SWE_API Color
 		{
 		public:
 			Color();
@@ -34,7 +38,7 @@ namespace SWEngine
 			static const unsigned char green_shift;
 		};
 
-		class Colors
+		class SWE_API Colors
 		{
 		public:
 			static const Color RED;
@@ -49,3 +53,5 @@ namespace SWEngine
 		};
 	}
 }
+
+#endif

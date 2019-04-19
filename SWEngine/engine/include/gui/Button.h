@@ -1,11 +1,15 @@
-#pragma once
+#ifndef SWE_BUTTON
+#define SWE_BUTTON
+
 #include "UIElement.h"
 
-namespace SWEngine
+#include "../Export.h"
+
+namespace SWE
 {
 	namespace GUI
 	{
-		class Button : public UIElement
+		class SWE_API Button : public UIElement
 		{
 		public:
 			Button(const int& x, const int& y, const int& width, const int& height);
@@ -15,3 +19,5 @@ namespace SWEngine
 		};
 	}
 }
+
+#endif

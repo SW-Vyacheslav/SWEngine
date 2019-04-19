@@ -1,7 +1,7 @@
 #include "../../include/math/Vector2D.h"
 #include <math.h>
 
-namespace SWEngine
+namespace SWE
 {
 	namespace Math
 	{

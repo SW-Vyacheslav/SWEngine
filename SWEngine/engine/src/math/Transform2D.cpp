@@ -3,7 +3,7 @@
 #include "../../include/math/Converter.h"
 #include <math.h>
 
-namespace SWEngine
+namespace SWE
 {
 	namespace Math
 	{

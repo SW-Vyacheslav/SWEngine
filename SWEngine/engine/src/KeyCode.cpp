@@ -1,6 +1,6 @@
 #include "../include/KeyCode.h"
 
-namespace SWEngine
+namespace SWE
 {
 	KeyCode::KeyCode() {}
 	KeyCode::~KeyCode() {}
