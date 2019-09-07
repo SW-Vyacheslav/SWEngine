@@ -24,7 +24,7 @@
 	#define SWE_API_IMPORT
 #endif
 
-namespace SWE
+namespace swe
 {
 	typedef signed char Int8;
 	typedef unsigned char UInt8;
@@ -34,6 +34,10 @@ namespace SWE
 	typedef unsigned long UInt32;
 	typedef signed long long Int64;
 	typedef unsigned long long UInt64;
+	typedef bool Bool;
+	typedef char Char;
+	typedef float Float;
+	typedef double Double;
 }
 
 #endif

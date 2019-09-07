@@ -3,7 +3,7 @@
 
 #include "../Export.h"
 
-namespace SWE
+namespace swe
 {
 	namespace Math
 	{
@@ -18,6 +18,7 @@ namespace SWE
 			float GetElementAt(const int& row, const int& column) const;
 
 			Matrix3x3 operator*(const Matrix3x3& mat);
+			void operator*=(const Matrix3x3& mat);
 
 		private:
 			float grid[3][3];

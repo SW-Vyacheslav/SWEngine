@@ -1,8 +1,8 @@
 #include "../../include/drawing/Color.h"
 
-namespace SWE
+namespace swe
 {
-	namespace Drawing
+	namespace drawing
 	{
 		Color::Color() : val(255 << alpha_shift) {}
 		Color::Color(const Color& color)
@@ -10,7 +10,7 @@ namespace SWE
 			val = color.val;
 		}
 		Color::~Color() {}
-		Color Color::FromRGBA(const int& red, const int& green, const int& blue, const int& alpha)
+		Color Color::FromRGB(const int& red, const int& green, const int& blue, const int& alpha)
 		{
 			Color ret_val;
 			if ((red >= 0 && red <= 255) && (green >= 0 && green <= 255) && (blue >= 0 && blue <= 255) && (alpha >= 0 && alpha <= 255))
@@ -22,7 +22,7 @@ namespace SWE
 			}
 			return ret_val;
 		}
-		Color Color::FromHSL(const int& hue, const int& saturation, const int& lightness)
+		Color Color::FromHSL(const int& hue, const int& saturation, const int& lightness, const int& alpha)
 		{
 			Color ret_val;
 			return ret_val;
@@ -121,23 +121,23 @@ namespace SWE
 		{
 			return 0;
 		}
-		unsigned long Color::GetValue() const
+		UInt32 Color::GetValue() const
 		{
 			return val;
 		}
 
-		const unsigned char Color::alpha_shift = 24;
-		const unsigned char Color::red_shift = 16;
-		const unsigned char Color::green_shift = 8;
+		const UInt8 Color::alpha_shift = 24;
+		const UInt8 Color::red_shift = 16;
+		const UInt8 Color::green_shift = 8;
 
-		const Color Colors::RED = Color::FromRGBA(255, 0, 0);
-		const Color Colors::GREEN = Color::FromRGBA(0, 255, 0);
-		const Color Colors::BLUE = Color::FromRGBA(0, 0, 255);
-		const Color Colors::BLACK = Color::FromRGBA(0, 0, 0);
-		const Color Colors::WHITE = Color::FromRGBA(255, 255, 255);
-		const Color Colors::YELLOW = Color::FromRGBA(255, 255, 0);
-		const Color Colors::MAGENTA = Color::FromRGBA(255, 0, 255);
-		const Color Colors::AQUA = Color::FromRGBA(0, 255, 255);
-		const Color Colors::GREY = Color::FromRGBA(128, 128, 128);
+		const Color Colors::RED = Color::FromRGB(255, 0, 0);
+		const Color Colors::GREEN = Color::FromRGB(0, 255, 0);
+		const Color Colors::BLUE = Color::FromRGB(0, 0, 255);
+		const Color Colors::BLACK = Color::FromRGB(0, 0, 0);
+		const Color Colors::WHITE = Color::FromRGB(255, 255, 255);
+		const Color Colors::YELLOW = Color::FromRGB(255, 255, 0);
+		const Color Colors::MAGENTA = Color::FromRGB(255, 0, 255);
+		const Color Colors::AQUA = Color::FromRGB(0, 255, 255);
+		const Color Colors::GREY = Color::FromRGB(128, 128, 128);
 	}
 }

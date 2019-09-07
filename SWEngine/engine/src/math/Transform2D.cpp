@@ -3,7 +3,7 @@
 #include "../../include/math/Converter.h"
 #include <math.h>
 
-namespace SWE
+namespace swe
 {
 	namespace Math
 	{
@@ -19,7 +19,7 @@ namespace SWE
 			mat.SetElementAt(2, 1, y);
 			mat.SetElementAt(2, 2, 1);
 
-			position = position * mat;
+			position *= mat;
 		}
 		void Transform2D::Rotate(const float& angle)
 		{
@@ -30,7 +30,7 @@ namespace SWE
 			mat.SetElementAt(1, 1, cosf(Converter::DegreesToRadians(angle)));
 			mat.SetElementAt(2, 2, 1);
 			
-			position = position * mat;
+			position *= mat;
 		}
 		void Transform2D::Scale(const float& x, const float& y)
 		{
@@ -39,7 +39,7 @@ namespace SWE
 			mat.SetElementAt(1, 1, y);
 			mat.SetElementAt(2, 2, 1);
 
-			position = position * mat;
+			position *= mat;
 		}
 	}
 }

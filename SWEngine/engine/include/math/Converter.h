@@ -3,7 +3,7 @@
 
 #include "../Export.h"
 
-namespace SWE
+namespace swe
 {
 	namespace Math
 	{

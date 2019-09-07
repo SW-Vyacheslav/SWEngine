@@ -1,6 +1,6 @@
 #include "../../include/math/Converter.h"
 
-namespace SWE
+namespace swe
 {
 	namespace Math
 	{

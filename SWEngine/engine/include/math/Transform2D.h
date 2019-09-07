@@ -2,10 +2,9 @@
 #define SWE_TRANSFORM2D
 
 #include "Vector2D.h"
-
 #include "../Export.h"
 
-namespace SWE
+namespace swe
 {
 	namespace Math
 	{

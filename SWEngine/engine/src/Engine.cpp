@@ -1,7 +1,7 @@
 #include "../include/Engine.h"
-#include "../include/KeyCode.h"
+#include "../include/system/KeyCode.h"
 
-namespace SWE
+namespace swe
 {
 	Engine::Engine() : f_bShowFps(false), f_bAtomActive(false) {}
 	Engine::~Engine() {}
@@ -112,19 +112,15 @@ namespace SWE
 	{
 		return f_bShowFps;
 	}
-	KeyInfo Engine::GetKeyInfo(const INT& keycode) const
+	system::KeyInfo Engine::GetKeyInfo(const INT& keycode) const
 	{
-		if (keycode < 0 || keycode > 255) return KeyInfo();
+		if (keycode < 0 || keycode > 255) return system::KeyInfo();
 
 		return f_keys[keycode];
 	}
-	//UI methods
-	VOID Engine::AddUIElement(GUI::UIElement& el)
-	{
-		f_vuiElements.push_back(&el);
-	}
+
 	//SWEngine drawing methods
-	VOID Engine::DrawLine(const int& x1, const int& y1, const int& x2, const int& y2, const Drawing::Color& color)
+	VOID Engine::DrawLine(const int& x1, const int& y1, const int& x2, const int& y2, const drawing::Color& color)
 	{
 		int dx = std::abs(x2 - x1);
 		int dy = std::abs(y2 - y1);
@@ -208,13 +204,13 @@ namespace SWE
 			x++;
 		}
 	}
-	VOID Engine::DrawTriangle(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const Drawing::Color& color)
+	VOID Engine::DrawTriangle(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const drawing::Color& color)
 	{
 		DrawLine(x1, y1, x2, y2, color);
 		DrawLine(x2, y2, x3, y3, color);
 		DrawLine(x3, y3, x1, y1, color);
 	}
-	VOID Engine::DrawCircle(const int& cx, const int& cy, const int& radius, const Drawing::Color& color)
+	VOID Engine::DrawCircle(const int& cx, const int& cy, const int& radius, const drawing::Color& color)
 	{
 		int x = 0;
 		int y = radius;
@@ -244,18 +240,18 @@ namespace SWE
 			--y;
 		}
 	}
-	VOID Engine::DrawRectangle(const int& x1, const int& y1, const int& x2, const int& y2, const Drawing::Color& color)
+	VOID Engine::DrawRectangle(const int& x1, const int& y1, const int& x2, const int& y2, const drawing::Color& color)
 	{
 		DrawLine(x1, y1, x2, y1, color);
 		DrawLine(x1, y1, x1, y2, color);
 		DrawLine(x1, y2, x2, y2, color);
 		DrawLine(x2, y1, x2, y2, color);
 	}
-	VOID Engine::FillTriangle(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const Drawing::Color& color)
+	VOID Engine::FillTriangle(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const drawing::Color& color)
 	{
 
 	}
-	VOID Engine::FillRectangle(const int& x1, const int& y1, const int& x2, const int& y2, const Drawing::Color& color)
+	VOID Engine::FillRectangle(const int& x1, const int& y1, const int& x2, const int& y2, const drawing::Color& color)
 	{
 		int incy = y1 < y2 ? 1 : -1;
 		int y = y1;
@@ -268,23 +264,23 @@ namespace SWE
 		}
 	}
 	//WinAPI drawing methods
-	VOID Engine::DrawPixelWinAPI(const int& x, const int& y, const Drawing::Color& color)
+	VOID Engine::DrawPixelWinAPI(const int& x, const int& y, const drawing::Color& color)
 	{
 		Gdiplus::SolidBrush brush(Gdiplus::Color((Gdiplus::ARGB)color.GetValue()));
 		f_gdipGraphics->FillRectangle(&brush, x, y, 1, 1);
 	}
-	VOID Engine::DrawLineWinAPI(const int& x1, const int& y1, const int& x2, const int& y2, const Drawing::Color& color, const UINT& width)
+	VOID Engine::DrawLineWinAPI(const int& x1, const int& y1, const int& x2, const int& y2, const drawing::Color& color, const UINT& width)
 	{
 		Gdiplus::Pen pen(Gdiplus::Color((Gdiplus::ARGB)color.GetValue()), (Gdiplus::REAL)width);
 		f_gdipGraphics->DrawLine(&pen, x1, y1, x2, y2);
 	}
-	VOID Engine::DrawTriangleWinAPI(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const Drawing::Color& color, const UINT& border_width)
+	VOID Engine::DrawTriangleWinAPI(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const drawing::Color& color, const UINT& border_width)
 	{
 		DrawLineWinAPI(x1, y1, x2, y2, color, border_width);
 		DrawLineWinAPI(x2, y2, x3, y3, color, border_width);
 		DrawLineWinAPI(x3, y3, x1, y1, color, border_width);
 	}
-	VOID Engine::DrawStringWinAPI(LPCWSTR str, const int& x1, const int& y1, const int& x2, const int& y2, const Drawing::Color& textcolor)
+	VOID Engine::DrawStringWinAPI(LPCWSTR str, const int& x1, const int& y1, const int& x2, const int& y2, const drawing::Color& textcolor)
 	{
 		Gdiplus::FontFamily  fontFamily(L"Roboto");
 		Gdiplus::Font        font(&fontFamily, 24, Gdiplus::FontStyleRegular, Gdiplus::UnitPixel);
@@ -304,12 +300,12 @@ namespace SWE
 		if (width != 0 && height != 0) f_gdipGraphics->DrawImage(&image, x, y, width, height);
 		else f_gdipGraphics->DrawImage(&image, x, y);
 	}
-	VOID Engine::FillCircleWinAPI(const int& cx, const int& cy, const int& radius, const Drawing::Color& color)
+	VOID Engine::FillCircleWinAPI(const int& cx, const int& cy, const int& radius, const drawing::Color& color)
 	{
 		Gdiplus::SolidBrush brush(Gdiplus::Color((Gdiplus::ARGB)color.GetValue()));
 		f_gdipGraphics->FillEllipse(&brush, cx - radius, cy - radius, radius << 1, radius << 1);
 	}
-	VOID Engine::FillTriangleWinAPI(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const Drawing::Color& color)
+	VOID Engine::FillTriangleWinAPI(const int& x1, const int& y1, const int& x2, const int& y2, const int& x3, const int& y3, const drawing::Color& color)
 	{
 		Gdiplus::Point points[3];
 		points[0].X = x1;
@@ -322,12 +318,12 @@ namespace SWE
 
 		f_gdipGraphics->FillPolygon(&brush, points, 3);
 	}
-	VOID Engine::FillRectangleWinAPI(const int& x1, const int& y1, const int& x2, const int& y2, const Drawing::Color& color)
+	VOID Engine::FillRectangleWinAPI(const int& x1, const int& y1, const int& x2, const int& y2, const drawing::Color& color)
 	{
 		Gdiplus::SolidBrush brush(Gdiplus::Color((Gdiplus::ARGB)color.GetValue()));
 		f_gdipGraphics->FillRectangle(&brush, x1, y1, x2, y2);
 	}
-	VOID Engine::FillWindowWinAPI(const Drawing::Color& color)
+	VOID Engine::FillWindowWinAPI(const drawing::Color& color)
 	{
 		FillRectangleWinAPI(0, 0, GetClientWidth(), GetClientHeight(), color);
 	}
@@ -456,37 +452,6 @@ namespace SWE
 				//RECT textRect2 = { 0,20,lstrlen(mouseposbuf) * 10,45 };
 				DrawText(f_hBufferDC, fpsbuf, lstrlen(fpsbuf), &textRect, NULL);
 				//DrawText(f_hBufferDC, mouseposbuf, lstrlen(mouseposbuf), &textRect2, DT_BOTTOM);
-			}
-
-			for (GUI::UIElement* el : f_vuiElements)
-			{
-				bool isMouseHoverElement = false;
-
-				EventArgs args;
-				args.engine = this;
-
-				if (GetMouseX() <= el->GetX() + el->GetWidth() && GetMouseX() >= el->GetX())
-				{
-					if (GetMouseY() <= el->GetY() + el->GetHeight() && GetMouseY() >= el->GetY())
-					{
-						isMouseHoverElement = true;
-					}
-				}
-
-				if (isMouseHoverElement)
-				{
-					el->SetMouseHover(true);
-					el->onMouseHover(el, &args);
-					if (GetKeyInfo(KeyCode::MOUSELEFT).KeyDown)
-					{
-						el->onMouseDown(el, &args);
-					}
-					else if (GetKeyInfo(KeyCode::MOUSELEFT).KeyUp) el->onMouseUp(el, &args);
-					else if (GetKeyInfo(KeyCode::MOUSELEFT).KeyPressed) el->onMousePressed(el, &args);
-				}
-				else if (el->IsMouseHover()) el->SetMouseHover(false);
-
-				el->UpdateElement(this);
 			}
 
 			//Copying from buffer to screen

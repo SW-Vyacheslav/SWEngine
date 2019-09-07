@@ -2,10 +2,9 @@
 #define SWE_VECTOR2D
 
 #include "Matrix3x3.h"
-
 #include "../Export.h"
 
-namespace SWE
+namespace swe
 {
 	namespace Math
 	{
@@ -27,10 +26,16 @@ namespace SWE
 			float GetLength() const;
 			Vector2D Normalize() const;
 
+			static float DotProduct(const Vector2D& vec1, const Vector2D& vec2);
+
 			Vector2D operator+(const Vector2D& vec);
+			void operator+=(const Vector2D& vec);
 			Vector2D operator-(const Vector2D& vec);
+			void operator-=(const Vector2D& vec);
 			Vector2D operator*(const float& num);
+			void operator*=(const float& num);
 			Vector2D operator*(const Matrix3x3& mat);
+			void operator*=(const Matrix3x3& mat);
 
 		private:
 			float x;

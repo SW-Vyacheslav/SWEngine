@@ -22,31 +22,37 @@
     <ClInclude Include="engine\include\Config.h" />
     <ClInclude Include="engine\include\drawing\Color.h" />
     <ClInclude Include="engine\include\Engine.h" />
-    <ClInclude Include="engine\include\Event.h" />
-    <ClInclude Include="engine\include\EventArgs.h" />
+    <ClInclude Include="engine\include\system\Event.h" />
+    <ClInclude Include="engine\include\system\EventArgs.h" />
     <ClInclude Include="engine\include\Export.h" />
-    <ClInclude Include="engine\include\gui\Button.h" />
-    <ClInclude Include="engine\include\gui\UIElement.h" />
-    <ClInclude Include="engine\include\KeyCode.h" />
-    <ClInclude Include="engine\include\KeyInfo.h" />
+    <ClInclude Include="engine\include\system\KeyCode.h" />
+    <ClInclude Include="engine\include\system\KeyInfo.h" />
     <ClInclude Include="engine\include\math\Converter.h" />
     <ClInclude Include="engine\include\math\Matrix3x3.h" />
+    <ClInclude Include="engine\include\math\Matrix4x4.h" />
     <ClInclude Include="engine\include\math\Transform2D.h" />
     <ClInclude Include="engine\include\math\Vector2D.h" />
+    <ClInclude Include="engine\include\math\Vector3D.h" />
+    <ClInclude Include="engine\include\system\Input.h" />
+    <ClInclude Include="engine\include\system\ScreenPoint.h" />
+    <ClInclude Include="engine\include\ui\Control.h" />
+    <ClInclude Include="engine\include\ui\Window.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="engine\src\drawing\Color.cpp" />
     <ClCompile Include="engine\src\Engine.cpp" />
-    <ClCompile Include="engine\src\Event.cpp" />
-    <ClCompile Include="engine\src\EventArgs.cpp" />
-    <ClCompile Include="engine\src\gui\Button.cpp" />
-    <ClCompile Include="engine\src\gui\UIElement.cpp" />
-    <ClCompile Include="engine\src\KeyCode.cpp" />
-    <ClCompile Include="engine\src\KeyInfo.cpp" />
+    <ClCompile Include="engine\src\system\Input.cpp" />
+    <ClCompile Include="engine\src\system\Event.cpp" />
+    <ClCompile Include="engine\src\system\EventArgs.cpp" />
+    <ClCompile Include="engine\src\system\KeyInfo.cpp" />
     <ClCompile Include="engine\src\math\Converter.cpp" />
     <ClCompile Include="engine\src\math\Matrix3x3.cpp" />
+    <ClCompile Include="engine\src\math\Matrix4x4.cpp" />
     <ClCompile Include="engine\src\math\Transform2D.cpp" />
     <ClCompile Include="engine\src\math\Vector2D.cpp" />
+    <ClCompile Include="engine\src\math\Vector3D.cpp" />
+    <ClCompile Include="engine\src\ui\Control.cpp" />
+    <ClCompile Include="engine\src\ui\Window.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -101,10 +107,12 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)SWEngine\engine\bin\</OutDir>
+    <IntDir>built\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)SWEngine\engine\bin\</OutDir>
     <TargetName>$(ProjectName)_d</TargetName>
+    <IntDir>built\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

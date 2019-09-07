@@ -5,9 +5,9 @@
 
 #include "../Export.h"
 
-namespace SWE
+namespace swe
 {
-	namespace Drawing
+	namespace drawing
 	{
 		class SWE_API Color
 		{
@@ -16,8 +16,8 @@ namespace SWE
 			Color(const Color& color);
 			~Color();
 
-			static Color FromRGBA(const int& red, const int& green, const int& blue, const int& alpha = 255);
-			static Color FromHSL(const int& hue, const int& saturation, const int& lightness);
+			static Color FromRGB(const int& red, const int& green, const int& blue, const int& alpha = 255);
+			static Color FromHSL(const int& hue, const int& saturation, const int& lightness, const int& alpha = 255);
 			static Color FromHEX(const std::string& hex);
 
 			int GetAlpha() const;
@@ -29,13 +29,13 @@ namespace SWE
 			int GetSaturation() const;
 			int GetLightness() const;
 
-			unsigned long GetValue() const;
+			UInt32 GetValue() const;
 
 		private:
-			unsigned long val;
-			static const unsigned char alpha_shift;
-			static const unsigned char red_shift;
-			static const unsigned char green_shift;
+			UInt32 val;
+			static const UInt8 alpha_shift;
+			static const UInt8 red_shift;
+			static const UInt8 green_shift;
 		};
 
 		class SWE_API Colors
